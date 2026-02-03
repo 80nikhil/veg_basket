@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Basket - Veg Basket</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .form-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        border: 1px solid #e9ecef;
+      }
+      .product-row:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container mt-5 mb-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <h2 class="fw-bold mb-4">🛒 Your Fresh Basket</h2>
+
+          {% if cart_items %}
+          <div class="card shadow-sm border-0 rounded-4 p-4 mb-4">
+            <table class="table align-middle">
+              <thead>
+                <tr class="text-muted">
+                  <th>Vegetable</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in cart_items %}
+                <tr class="product-row">
+                  <td><strong>{{ item.product.name }}</strong></td>
+                  <td>₹{{ item.product.price }}</td>
+                  <td>{{ item.quantity }} kg</td>
+                  <td class="fw-bold text-success text-end">
+                    ₹{{ item.total_price }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <div
+              class="d-flex justify-content-between align-items-center mt-4 p-3 bg-success text-white rounded-3"
+            >
+              <h4 class="m-0">Grand Total:</h4>
+              <h4 class="m-0">₹{{ grand_total }}</h4>
+            </div>
+          </div>
+
+          <div class="card shadow-sm border-0 rounded-4 p-4">
+            <h4 class="fw-bold mb-3">Delivery Information</h4>
+            <form method="POST" action="{% url 'place_order' %}">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label small fw-bold">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    class="form-control rounded-pill"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label small fw-bold">Phone Number</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    class="form-control rounded-pill"
+                    placeholder="e.g. 9876543210"
+                    required
+                  />
+                </div>
+                <div class="col-12 mb-4">
+                  <label class="form-label small fw-bold"
+                    >Delivery Address</label
+                  >
+                  <textarea
+                    name="address"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Flat No, Street, Landmark..."
+                    style="border-radius: 15px"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <div
+                class="d-flex justify-content-between align-items-center mt-2"
+              >
+                <a
+                  href="{% url 'shop_gallery' %}"
+                  class="text-decoration-none text-muted fw-bold"
+                  >← Back to Shop</a
+                >
+                <button
+                  type="submit"
+                  class="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow"
+                >
+                  Place Order (Cash on Delivery)
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {% else %}
+          <div class="card shadow-sm border-0 rounded-4 p-5 text-center">
+            <div class="display-1 mb-3">🥬</div>
+            <h3>Your basket is empty!</h3>
+            <p class="text-muted">
+              Looks like you haven't added any fresh veggies yet.
+            </p>
+            <a
+              href="{% url 'shop_gallery' %}"
+              class="btn btn-success btn-lg px-5 rounded-pill mt-3"
+              >Start Shopping</a
+            >
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
