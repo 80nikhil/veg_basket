@@ -1,0 +1,130 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold">Categories</h4>
+    <button class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="fa fa-plus"></i> Add Category
+    </button>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="card p-3 table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    {% if cat.image %}
+                    <img src="{{ cat.image.url }}" width="50" class="rounded">
+                    {% endif %}
+                </td>
+                <td>{{ cat.name }}</td>
+                <td>{{ cat.description }}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                        data-bs-target="#editCategory{{cat.id}}">
+                        <i class="fa fa-edit"></i>
+                    </button>
+
+                    <form method="post" action="{% url 'category_delete' cat.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="modal fade" id="addCategoryModal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="post" enctype="multipart/form-data" action="{% url 'category_create' %}" class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Add Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Category Name</label>
+                        <input type="text" name="name" placeholder="Enter category name" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Image</label>
+                        <input type="file" name="image" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" placeholder="Enter category description" class="form-control"
+                        rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn" style="background:#437505; color:white;">Add Category</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT CATEGORY MODALS -->
+{% for cat in categories %}
+<div class="modal fade" id="editCategory{{cat.id}}">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="post" enctype="multipart/form-data" action="{% url 'category_update' cat.id %}"
+            class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Edit Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Category Name</label>
+                        <input type="text" name="name" value="{{cat.name}}" class="form-control"
+                            placeholder="Enter category name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Image</label>
+                        <input type="file" name="image" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"
+                        placeholder="Enter category description">{{cat.description}}</textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn" style="background:#437505; color:white;">Update Category</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

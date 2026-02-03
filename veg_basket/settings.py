@@ -33,17 +33,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third-party apps
     'drf_yasg',
     'rest_framework',
-    
-    # Your custom apps (Listed ONLY once each)
-    'user',
-    'order',
-    'product',
-    'products',  # This is the new app we are working on
-    'adminpanel',
+    'api',
+    'adminpanel'
 ]
 
 MIDDLEWARE = [
