@@ -1,0 +1,154 @@
+{% extends "adminpanel/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Orders</h4>
+</div>
+
+<!-- Messages -->
+{% if messages %} {% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %} {% endif %}
+
+<div class="card p-3 table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Order ID</th>
+        <th>User</th>
+        <th>Society</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ order.order_id }}</td>
+        <td>{{ order.user.username }}</td>
+        <td>{{ order.society|default:"-" }}</td>
+        <td>₹ {{ order.total_amount }}</td>
+        <td>
+          <span class="badge bg-info text-dark">
+            {{ order.get_order_status_display }}
+          </span>
+        </td>
+        <td>{{ order.created_at|date:"M d, Y" }}</td>
+
+        <td>
+          <button
+            class="btn btn-sm btn-outline-success"
+            data-bs-toggle="modal"
+            data-bs-target="#updateOrder{{ order.id }}"
+          >
+            Update
+          </button>
+        </td>
+      </tr>
+
+      <!-- ORDER PRODUCTS ROW -->
+      <tr>
+        <td colspan="8">
+          <strong>Products:</strong>
+          <ul class="mb-0">
+            {% for item in order.order_products.all %}
+            <li>
+              {{ item.product.name }} × {{ item.quantity }} (₹ {{ item.price }})
+            </li>
+            {% endfor %}
+          </ul>
+        </td>
+      </tr>
+
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- UPDATE ORDER STATUS MODALS -->
+{% for order in orders %}
+<div class="modal fade" id="updateOrder{{ order.id }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <form
+      method="post"
+      action="{% url 'order_update' order.id %}"
+      class="modal-content"
+    >
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Update Order Status</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label">Order Status</label>
+        <select name="order_status" class="form-control" required>
+          <option
+            value="pending"
+            {%
+            if
+            order.order_status=""
+            ="pending"
+            %}selected{%
+            endif
+            %}
+          >
+            Pending
+          </option>
+          <option
+            value="confirmed"
+            {%
+            if
+            order.order_status=""
+            ="confirmed"
+            %}selected{%
+            endif
+            %}
+          >
+            Confirmed
+          </option>
+          <option
+            value="delivered"
+            {%
+            if
+            order.order_status=""
+            ="delivered"
+            %}selected{%
+            endif
+            %}
+          >
+            Delivered
+          </option>
+          <option
+            value="cancelled"
+            {%
+            if
+            order.order_status=""
+            ="cancelled"
+            %}selected{%
+            endif
+            %}
+          >
+            Cancelled
+          </option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-theme">Update</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %} {% endblock %}

@@ -1,138 +1,224 @@
-{% extends "adminpanel/base.html" %}
-
-{% block content %}
+{% extends "adminpanel/base.html" %} {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold">Products</h4>
-    <button class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#addProductModal">
-        <i class="fa fa-plus"></i> Add Product
-    </button>
+  <h4 class="fw-bold">Products</h4>
+  <button
+    class="btn btn-theme"
+    data-bs-toggle="modal"
+    data-bs-target="#addProductModal"
+  >
+    <i class="fa fa-plus"></i> Add Product
+  </button>
 </div>
 
-{% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-success">{{ message }}</div>
-  {% endfor %}
-{% endif %}
+{% if messages %} {% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %} {% endif %}
 
 <div class="card p-3">
-<table class="table table-hover align-middle">
+  <table class="table table-hover align-middle">
     <thead>
-        <tr>
-            <th>#</th>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Unit</th>
-            <th>Action</th>
-        </tr>
+      <tr>
+        <th>#</th>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Qty</th>
+        <th>Unit</th>
+        <th>Action</th>
+      </tr>
     </thead>
     <tbody>
-        {% for prod in products %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{% if prod.image %}<img src="{{ prod.image.url }}" width="50" class="rounded">{% endif %}</td>
-            <td>{{ prod.name }}</td>
-            <td>{{ prod.category.name }}</td>
-            <td>₹ {{ prod.price }}</td>
-            <td>{{ prod.quantity }}</td>
-            <td>{{ prod.unit.name }}</td>
-            <td>
-                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#editProduct{{prod.id}}">
-                    <i class="fa fa-edit"></i>
-                </button>
+      {% for prod in products %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>
+          {% if prod.image %}<img
+            src="{{ prod.image.url }}"
+            width="50"
+            class="rounded"
+          />{% endif %}
+        </td>
+        <td>{{ prod.name }}</td>
+        <td>{{ prod.category.name }}</td>
+        <td>₹ {{ prod.price }}</td>
+        <td>{{ prod.quantity }}</td>
+        <td>{{ prod.unit.name }}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-success"
+            data-bs-toggle="modal"
+            data-bs-target="#editProduct{{prod.id}}"
+          >
+            <i class="fa fa-edit"></i>
+          </button>
 
-                <form method="post" action="{% url 'product_delete' prod.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></button>
-                </form>
-            </td>
-        </tr>
+          <form
+            method="post"
+            action="{% url 'product_delete' prod.id %}"
+            style="display: inline"
+          >
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
 
-        <!-- EDIT MODAL -->
-        <div class="modal fade" id="editProduct{{prod.id}}">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <form method="post" enctype="multipart/form-data" action="{% url 'product_update' prod.id %}" class="modal-content">
-              {% csrf_token %}
-              <div class="modal-header bg-light">
-                <h5 class="modal-title">Edit Product</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <!-- EDIT MODAL -->
+      <div class="modal fade" id="editProduct{{prod.id}}">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <form
+            method="post"
+            enctype="multipart/form-data"
+            action="{% url 'product_update' prod.id %}"
+            class="modal-content"
+          >
+            {% csrf_token %}
+            <div class="modal-header bg-light">
+              <h5 class="modal-title">Edit Product</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Category</label>
+                  <select name="category" class="form-control" required>
+                    {% for c in categories %}
+                    <option
+                      value="{{c.id}}"
+                      {%
+                      if
+                      c.id=""
+                      ="prod.category.id"
+                      %}selected{%
+                      endif
+                      %}
+                    >
+                      {{c.name}}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Unit</label>
+                  <select name="unit" class="form-control" required>
+                    {% for u in units %}
+                    <option
+                      value="{{u.id}}"
+                      {%
+                      if
+                      u.id=""
+                      ="prod.unit.id"
+                      %}selected{%
+                      endif
+                      %}
+                    >
+                      {{u.name}}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
-              <div class="modal-body">
 
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Category</label>
-                    <select name="category" class="form-control" required>
-                      {% for c in categories %}
-                      <option value="{{c.id}}" {% if c.id == prod.category.id %}selected{% endif %}>{{c.name}}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Unit</label>
-                    <select name="unit" class="form-control" required>
-                      {% for u in units %}
-                      <option value="{{u.id}}" {% if u.id == prod.unit.id %}selected{% endif %}>{{u.name}}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Price (₹)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value="{{prod.price}}"
+                    step="0.01"
+                    class="form-control"
+                    required
+                  />
                 </div>
 
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Price (₹)</label>
-                    <input type="number" name="price" value="{{prod.price}}" step="0.01" class="form-control" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" name="quantity" value="{{prod.quantity}}" class="form-control" required>
-                  </div>
+                <div class="col-md-6">
+                  <label class="form-label">Quantity</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value="{{prod.quantity}}"
+                    class="form-control"
+                    required
+                  />
                 </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Product Name</label>
-                  <input type="text" name="name" value="{{prod.name}}" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Description</label>
-                  <textarea name="description" class="form-control" rows="3">{{prod.description}}</textarea>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Product Image</label>
-                  <input type="file" name="image" class="form-control">
-                </div>
-
               </div>
-              <div class="modal-footer">
-                <button type="submit" class="btn" style="background:#437505; color:white;">Update Product</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+              <div class="mb-3">
+                <label class="form-label">Product Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value="{{prod.name}}"
+                  class="form-control"
+                  required
+                />
               </div>
-            </form>
-          </div>
+
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3">
+{{prod.description}}</textarea
+                >
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Product Image</label>
+                <input type="file" name="image" class="form-control" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="submit"
+                class="btn"
+                style="background: #437505; color: white"
+              >
+                Update Product
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
 
-        {% endfor %}
+      {% endfor %}
     </tbody>
-</table>
+  </table>
 </div>
 
 <!-- ADD MODAL -->
 <div class="modal fade" id="addProductModal">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <form method="post" enctype="multipart/form-data" action="{% url 'product_create' %}" class="modal-content">
+    <form
+      method="post"
+      enctype="multipart/form-data"
+      action="{% url 'product_create' %}"
+      class="modal-content"
+    >
       {% csrf_token %}
       <div class="modal-header bg-light">
         <h5 class="modal-title">Add Product</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
       </div>
       <div class="modal-body">
-
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label">Category</label>
@@ -156,34 +242,65 @@
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label">Price (₹)</label>
-            <input type="number" name="price" placeholder="Enter price" step="0.01" class="form-control" required>
+            <input
+              type="number"
+              name="price"
+              placeholder="Enter price"
+              step="0.01"
+              class="form-control"
+              required
+            />
           </div>
 
           <div class="col-md-6">
             <label class="form-label">Quantity</label>
-            <input type="number" name="quantity" placeholder="Enter quantity" class="form-control" required>
+            <input
+              type="number"
+              name="quantity"
+              placeholder="Enter quantity"
+              class="form-control"
+              required
+            />
           </div>
         </div>
 
         <div class="mb-3">
           <label class="form-label">Product Name</label>
-          <input type="text" name="name" placeholder="Enter product name" class="form-control" required>
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter product name"
+            class="form-control"
+            required
+          />
         </div>
 
         <div class="mb-3">
           <label class="form-label">Description</label>
-          <textarea name="description" placeholder="Enter product description" class="form-control" rows="3"></textarea>
+          <textarea
+            name="description"
+            placeholder="Enter product description"
+            class="form-control"
+            rows="3"
+          ></textarea>
         </div>
 
         <div class="mb-3">
           <label class="form-label">Product Image</label>
-          <input type="file" name="image" class="form-control">
+          <input type="file" name="image" class="form-control" />
         </div>
-
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn" style="background:#437505; color:white;">Add Product</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button
+          type="submit"
+          class="btn"
+          style="background: #437505; color: white"
+        >
+          Add Product
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
       </div>
     </form>
   </div>

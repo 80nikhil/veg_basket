@@ -1,0 +1,110 @@
+{% extends "adminpanel/base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Users</h4>
+</div>
+
+<!-- Messages -->
+{% if messages %} {% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %} {% endif %}
+
+<div class="card p-3 table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Contact</th>
+        <th>Society</th>
+        <th>Wallet</th>
+        <th>Role</th>
+        <th>Joined</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ user.username }}</td>
+        <td>{{ user.email_id }}</td>
+        <td>{{ user.contact_no }}</td>
+        <td>{{ user.society|default:"-" }}</td>
+        <td>₹ {{ user.wallet_amount }}</td>
+        <td>
+          {% if user.role == 'admin' %}
+          <span class="badge bg-danger">Admin</span>
+          {% else %}
+          <span class="badge bg-success">Customer</span>
+          {% endif %}
+        </td>
+        <td>{{ user.created_at|date:"M d, Y" }}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#walletModal{{ user.id }}"
+          >
+            Wallet
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- WALLET MODALS -->
+{% for user in users %}
+<div class="modal fade" id="walletModal{{ user.id }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <form
+      method="post"
+      action="{% url 'wallet_update' user.id %}"
+      class="modal-content"
+    >
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Update Wallet – {{ user.username }}</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Amount</label>
+          <input
+            type="number"
+            step="0.01"
+            name="amount"
+            class="form-control"
+            placeholder="Enter amount"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Transaction Type</label>
+          <select name="payment_type" class="form-control" required>
+            <option value="credit">Credit (Add)</option>
+            <option value="debit">Debit (Deduct)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-theme">Submit</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %} {% endblock %}

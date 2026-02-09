@@ -1,0 +1,133 @@
+{% extends "adminpanel/base.html" %} {% load static %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Units</h4>
+  <button
+    class="btn btn-theme"
+    data-bs-toggle="modal"
+    data-bs-target="#addUnitModal"
+  >
+    <i class="fa fa-plus"></i> Add Unit
+  </button>
+</div>
+
+<!-- Messages -->
+{% if messages %} {% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %} {% endif %}
+
+<div class="card p-3 table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Unit Name</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for unit in units %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ unit.name }}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-success"
+            data-bs-toggle="modal"
+            data-bs-target="#editUnit{{ unit.id }}"
+          >
+            <i class="fa fa-edit"></i>
+          </button>
+
+          <form
+            method="post"
+            action="{% url 'unit_delete' unit.id %}"
+            style="display: inline"
+          >
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ADD UNIT MODAL -->
+<div class="modal fade" id="addUnitModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" action="{% url 'unit_create' %}" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Add Unit</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label">Unit Name</label>
+        <input
+          type="text"
+          name="name"
+          class="form-control"
+          placeholder="Enter unit name"
+          required
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-theme">Add</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT UNIT MODALS -->
+{% for unit in units %}
+<div class="modal fade" id="editUnit{{ unit.id }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <form
+      method="post"
+      action="{% url 'unit_update' unit.id %}"
+      class="modal-content"
+    >
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Unit</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label">Unit Name</label>
+        <input
+          type="text"
+          name="name"
+          value="{{ unit.name }}"
+          class="form-control"
+          required
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-theme">Update</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %} {% endblock %}
