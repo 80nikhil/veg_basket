@@ -154,52 +154,56 @@ class CategoryDeleteView(View):
 # ================= PRODUCT =================
 
 class ProductListView(View):
-    model = Product
     template_name = 'adminpanel/product_list.html'
-    context_object_name = 'products'
-
-    def get(self,request, **kwargs):
+    def get(self, request, **kwargs):
         try:
-            User.objects.get(id=request.session.get('user_id')) 
+            User.objects.get(id=request.session.get('user_id'))
             context = {}
+            context['products'] = Product.objects.filter(is_deleted=False)
             context['categories'] = Category.objects.filter(is_deleted=False)
             context['units'] = Unit.objects.all()
-            return render(request,self.template_name,context)
+            context['cities'] = City.objects.all()
+            return render(request, self.template_name, context)
         except:
             return redirect('/login/')
 
 
 class ProductCreateView(View):
     def post(self, request):
-        Product.objects.create(
+        product = Product.objects.create(
             category_id=request.POST.get('category'),
             name=request.POST.get('name'),
             description=request.POST.get('description'),
             image=request.FILES.get('image'),
             price=request.POST.get('price'),
             quantity=request.POST.get('quantity'),
-            unit_id=request.POST.get('unit')
+            unit_id=request.POST.get('unit'),
+            is_in_stock=True if request.POST.get('is_in_stock') else False
         )
+        city_ids = request.POST.getlist('cities')
+        product.cities.set(city_ids)
         messages.success(request, "Product added successfully 🛒")
         return redirect('product_list')
 
 
+
+
 class ProductUpdateView(View):
     def post(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
-
-        product.category_id = request.POST.get('category')
+        product = get_object_or_404(Product, pk=pk, is_deleted=False)
         product.name = request.POST.get('name')
         product.description = request.POST.get('description')
         product.price = request.POST.get('price')
         product.quantity = request.POST.get('quantity')
+        product.category_id = request.POST.get('category')
         product.unit_id = request.POST.get('unit')
-
         if request.FILES.get('image'):
             product.image = request.FILES.get('image')
-
+        product.is_in_stock = True if request.POST.get('is_in_stock') else False
         product.save()
-        messages.success(request, "Product updated ✏️")
+        city_ids = request.POST.getlist('cities')
+        product.cities.set(city_ids)
+        messages.success(request, "Product updated successfully ✏️")
         return redirect('product_list')
 
 
@@ -409,3 +413,43 @@ class WalletHistoryListView(ListView):
         except:
             return redirect('/login/')
 
+#================= City =========================#
+class CityListView(ListView):
+    model = City
+    template_name = 'adminpanel/city_list.html'
+    context_object_name = 'cities'
+
+    def get_queryset(self):
+        try:
+            User.objects.get(id=self.request.session.get('user_id'))
+            return City.objects.all()
+        except: 
+            return redirect('/login/')
+
+class CityCreateView(View):
+    def post(self, request):
+        City.objects.create(
+            name=request.POST.get('name'),
+            pin_code=request.POST.get('pin_code'),
+        )
+        messages.success(request, "City added successfully ✅")
+        return redirect('city_list')
+    
+class CityUpdateView(View):
+    def post(self, request, pk):
+        city = get_object_or_404(City, pk=pk)
+
+        city.name = request.POST.get('name')
+        city.pin_code = request.POST.get('pin_code')
+        city.save()
+
+        messages.success(request, "City updated ✏️")
+        return redirect('city_list')
+    
+class CityDeleteView(View):
+    def post(self, request, pk):
+        city = get_object_or_404(City, pk=pk)
+        city.delete()
+        messages.success(request, "City deleted 🗑️")
+        return redirect('city_list')
+    

@@ -1,0 +1,160 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Cities</h4>
+  <button class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#addCityModal">
+    <i class="fa fa-plus"></i> Add City
+  </button>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-success">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="card p-3">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>City Name</th>
+        <th>Pin Code</th>
+        <th>Created At</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for city in cities %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ city.name }}</td>
+        <td>{{ city.pin_code }}</td>
+        <td>{{ city.created_at|date:"d M Y" }}</td>
+        <td>
+          <!-- Edit Button -->
+          <button class="btn btn-sm btn-outline-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editCity{{ city.id }}">
+            <i class="fa fa-edit"></i>
+          </button>
+
+          <!-- Delete -->
+          <form method="post"
+                action="{% url 'city_delete' city.id %}"
+                style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ================= ADD CITY MODAL ================= -->
+<div class="modal fade" id="addCityModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post"
+          action="{% url 'city_create' %}"
+          class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">Add City</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">City Name</label>
+          <input type="text"
+                 name="name"
+                 class="form-control"
+                 placeholder="Enter city name"
+                 required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Pin Code</label>
+          <input type="text"
+                 name="pin_code"
+                 maxlength="6"
+                 class="form-control"
+                 placeholder="Enter pin code"
+                 required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit"
+                class="btn"
+                style="background:#437505; color:white;">
+          Add City
+        </button>
+        <button type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= EDIT MODALS ================= -->
+{% for city in cities %}
+<div class="modal fade" id="editCity{{ city.id }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post"
+          action="{% url 'city_update' city.id %}"
+          class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">Edit City</h5>
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">City Name</label>
+          <input type="text"
+                 name="name"
+                 value="{{ city.name }}"
+                 class="form-control"
+                 required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Pin Code</label>
+          <input type="text"
+                 name="pin_code"
+                 value="{{ city.pin_code }}"
+                 maxlength="6"
+                 class="form-control"
+                 required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit"
+                class="btn btn-success">
+          Update
+        </button>
+        <button type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
