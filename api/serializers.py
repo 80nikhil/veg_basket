@@ -102,3 +102,16 @@ class PlaceOrderSerializer(serializers.Serializer):
     delivery_date = serializers.DateField()
     delivery_slot = serializers.CharField()
     products = OrderProductInputSerializer(many=True)
+
+class WalletHistoryInputSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(required=True)    
+
+class CitiesSerializer(serializers.Serializer):
+    class Meta:
+        model = City
+        fields = '__all__'
+
+class WalletHistorySerializer(serializers.Serializer):
+    class Meta:
+        model = WalletHistory
+        fields = '__all__'        

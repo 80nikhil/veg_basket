@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from .models import *
 from .serializers import *
@@ -245,3 +246,37 @@ class OrderItemsView(APIView):
 
         except Order.DoesNotExist:
             return Response({'error': 'Order not found.'}, status=404)
+        
+#------NEW API V2-----------------
+
+class CitiesView(APIView):
+    def get(self,request):
+        cities_list = City.objects.all()
+        serializer = CitiesSerializer(cities_list,many=True)
+        context = {
+            'message':"Cities fetched Succesfully",
+            'cities': serializer.data
+        }
+        return Response(context,status=status.HTTP_200_OK)
+
+class WalletHistoryView(APIView):
+
+    @swagger_auto_schema(request_body=WalletHistoryInputSerializer)
+    def post(self,request):
+        input_serializer = WalletHistoryInputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        user_id = input_serializer.validated_data['user_id']
+        user_id = request.POST.get('user_id')
+        try:
+            user_obj = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'message': "User not exist!"}, status=400)
+
+        history = WalletHistory.objects.filter(user=user_obj).order_by("-id")
+        history_data = WalletHistorySerializer(history, many=True).data
+        user_data = RegisterSerializer(user_obj).data
+
+        return Response({
+            'user': user_data,
+            'data': history_data
+        })
