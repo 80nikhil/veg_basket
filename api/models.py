@@ -74,7 +74,7 @@ class Product(models.Model):
     quantity = models.PositiveIntegerField()
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True)
-    city = models.ForeignKey(City,on_delete=models.CASCADE,null=True,blank=True)
+    cities = models.ManyToManyField(City, blank=True)
     is_in_stock = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
