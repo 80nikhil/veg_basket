@@ -6,8 +6,6 @@ class SocietySerializer(serializers.ModelSerializer):
     class Meta:
         model = Society
         fields = ['id', 'name', 'created_at']
-        
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     society = SocietySerializer()
@@ -109,12 +107,12 @@ class PlaceOrderSerializer(serializers.Serializer):
 class WalletHistoryInputSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(required=True)    
 
-class CitiesSerializer(serializers.Serializer):
+class CitiesSerializer(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = '__all__'
 
-class WalletHistorySerializer(serializers.Serializer):
+class WalletHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WalletHistory
         fields = '__all__'        

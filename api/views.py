@@ -265,14 +265,13 @@ class WalletHistoryView(APIView):
         user_id = request.data.get('user_id')
         try:
             user_obj = User.objects.get(id=user_id)
+            history = WalletHistory.objects.filter(user=user_obj).order_by("-id")
+            history_data = WalletHistorySerializer(history, many=True).data
+            user_data = RegisterSerializer(user_obj).data
+
+            return Response({
+                'user': user_data,
+                'data': history_data
+            })
         except User.DoesNotExist:
             return Response({'message': "User not exist!"}, status=400)
-
-        history = WalletHistory.objects.filter(user=user_obj).order_by("-id")
-        history_data = WalletHistorySerializer(history, many=True).data
-        user_data = RegisterSerializer(user_obj).data
-
-        return Response({
-            'user': user_data,
-            'data': history_data
-        })
