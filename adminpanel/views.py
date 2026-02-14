@@ -300,10 +300,13 @@ class FlashSaleListView(ListView):
     template_name = 'adminpanel/flash_sale_list.html'
     context_object_name = 'flash_sales'
 
-    def get_queryset(self):
+    def get(self,request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return FlashSale.objects.all()
+            flash_sales = FlashSale.objects.all()
+            products = Product.objects.all()
+            context = {"flash_sales":flash_sales,"products":products}
+            return render(request,self.template_name,context)
         except: 
             return redirect('/login/')
 
