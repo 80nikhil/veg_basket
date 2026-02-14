@@ -262,7 +262,7 @@ class WalletHistoryView(APIView):
         input_serializer = WalletHistoryInputSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
         user_id = input_serializer.validated_data['user_id']
-        user_id = request.POST.get('user_id')
+        user_id = request.data.get('user_id')
         try:
             user_obj = User.objects.get(id=user_id)
         except User.DoesNotExist:

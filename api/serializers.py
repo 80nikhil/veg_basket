@@ -6,13 +6,16 @@ class SocietySerializer(serializers.ModelSerializer):
     class Meta:
         model = Society
         fields = ['id', 'name', 'created_at']
+        
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    society = SocietySerializer()
+   
     class Meta:
         model = User
-        fields = ['id', 'username', 'contact_no', 'email_id', 'referal_code', 'wallet_amount']
-        read_only_fields = ['id', 'email_id', 'referal_code', 'wallet_amount']
+        fields = ['id', 'username', 'contact_no', 'email_id', 'referal_code', 'wallet_amount','role','society']
+        read_only_fields = ['id', 'email_id', 'referal_code', 'wallet_amount','role','society']
 
 
 class LoginSerializer(serializers.Serializer):
