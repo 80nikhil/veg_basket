@@ -4,6 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from .models import *
 from .serializers import *
+from datetime import datetime as dt
 
 class SocietyListView(APIView):
     def get(self, request):
@@ -144,7 +145,12 @@ class CartProductsView(APIView):
 
 class PlaceOrderView(APIView):
     def post(self, request):
-        serializer = PlaceOrderSerializer(data=request.data)
+        data = request.data.copy()   # make mutable copy
+        parsed = dt.strptime(data['delivery_date'], "%d %b")
+        current_year = dt.now().year
+        final_date = parsed.replace(year=current_year)
+        data['delivery_date'] = final_date.date()   # must call ()
+        serializer = PlaceOrderSerializer(data=data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
@@ -156,42 +162,34 @@ class PlaceOrderView(APIView):
             return Response({'error': 'User not found.'}, status=404)
 
         try:
-            with transaction.atomic():
-                last_order = Order.objects.order_by('-id').first()
-                next_num = last_order.id + 1 if last_order else 1
-                order_id_str = f"{next_num:04d}"
+            last_order = Order.objects.order_by('-id').first()
+            next_num = last_order.id + 1 if last_order else 1
+            order_id_str = f"{next_num:04d}"
 
-                order = Order.objects.create(
-                    order_id=order_id_str,
-                    user=user,
-                    society_id=data['society_id'],
-                    address=data['address'],
-                    delivery_date=data['delivery_date'],
-                    delivery_slot=data['delivery_slot'],
-                    total_amount=data['order_value'],
-                )
+            order = Order.objects.create(
+                order_id=order_id_str,
+                user=user,
+                society_id=data['society_id'],
+                address=data['address'],
+                delivery_date=data['delivery_date'],
+                delivery_slot=data['delivery_slot'],
+                total_amount=data['order_value'],
+            )
 
-                created_products = []
+            created_products = []
 
-                for p in data['products']:
-                    product = Product.objects.get(id=p['product_id'])
-                    OrderProduct.objects.create(order=order, product=product, quantity=p['quantity'])
+            for p in data['products']:
+                product = Product.objects.get(id=p['product_id'])
+                OrderProduct.objects.create(order=order, product=product, quantity=p['quantity'])
+                created_products.append({'product_id': product.id, 'quantity': p['quantity']})
 
-                    cart_qs = UserCart.objects.filter(user=user, product=product, is_order_checked_out=False)[:p['quantity']]
-                    for ci in cart_qs:
-                        ci.is_order_checked_out = True
-                        ci.save()
-
-                    created_products.append({'product_id': product.id, 'quantity': p['quantity']})
-
-                return Response({
-                    'message': 'Order placed successfully.',
-                    'order_id': order.order_id,
-                    'order_db_id': order.id,
-                    'total_amount': str(order.total_amount),
-                    'products': created_products,
-                })
-
+            return Response({
+                'message': 'Order placed successfully.',
+                'order_id': order.order_id,
+                'order_db_id': order.id,
+                'total_amount': str(order.total_amount),
+                'products': created_products,
+            })
         except Product.DoesNotExist:
             return Response({'error': 'One of the products not found.'}, status=404)
 
@@ -224,11 +222,9 @@ class OrderItemsView(APIView):
         order_id = request.GET.get('order_id')
         if not order_id:
             return Response({'error': 'order_id is required.'}, status=400)
-
         try:
             order = Order.objects.get(order_id=order_id)
             items = OrderProduct.objects.filter(order=order)
-
             data = []
             for it in items:
                 prod = it.product
