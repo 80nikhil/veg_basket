@@ -161,8 +161,8 @@ class ProductListView(View):
             context = {}
             context['products'] = Product.objects.filter(is_deleted=False)
             context['categories'] = Category.objects.filter(is_deleted=False)
-            context['units'] = Unit.objects.all()
-            context['cities'] = City.objects.all()
+            context['units'] = Unit.objects.all().order_by('-id')
+            context['cities'] = City.objects.all().order_by('-id')
             return render(request, self.template_name, context)
         except:
             return redirect('/login/')
@@ -265,7 +265,7 @@ class UnitListView(ListView):
     def get_queryset(self):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return Unit.objects.all()
+            return Unit.objects.all().order_by('-id')
         except: 
             return redirect('/login/')
         
@@ -303,8 +303,8 @@ class FlashSaleListView(ListView):
     def get(self,request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            flash_sales = FlashSale.objects.all()
-            products = Product.objects.all()
+            flash_sales = FlashSale.objects.all().order_by('-id')
+            products = Product.objects.all().order_by('-id')
             context = {"flash_sales":flash_sales,"products":products}
             return render(request,self.template_name,context)
         except: 
@@ -348,7 +348,7 @@ class OrderListView(ListView):
     def get_queryset(self):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return Order.objects.all()
+            return Order.objects.all().order_by('-id')
         except: 
             return redirect('/login/')
 
@@ -371,7 +371,7 @@ class UserListView(ListView):
     def get_queryset(self):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return User.objects.all()
+            return User.objects.all().order_by('-id')
         except: 
             return redirect('/login/')
 
@@ -425,7 +425,7 @@ class CityListView(ListView):
     def get_queryset(self):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return City.objects.all()
+            return City.objects.all().order_by('-id')
         except: 
             return redirect('/login/')
 
