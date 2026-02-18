@@ -321,9 +321,9 @@ class ProfileView(APIView):
             user_obj.contact_no = request.data.get('contact_no')
             user_obj.password = request.data.get('password')
             if request.data.get('society_id'):
-                user_obj.username = request.data.get('society_id')
+                user_obj.society_id = request.data.get('society_id')
             if request.data.get('city_id'):
-                user_obj.username = request.data.get('city_id')    
+                user_obj.city_id = request.data.get('city_id')    
             return Response({'message':'data updated successfully'},status=status.HTTP_200_OK)  
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
