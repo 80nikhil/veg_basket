@@ -14,10 +14,10 @@ urlpatterns = [
     path('order/order-items/', OrderItemsView.as_view(),name='order-items/'),
 
 #------NEW API V2-----------------
-    path('cities_list',CitiesView.as_view(),name="cities_list"),
-    path('wallet_history',WalletHistoryView.as_view(),name='wallet_history'),
+    path('cities_list/',CitiesView.as_view(),name="cities_list"),
+    path('wallet_history/',WalletHistoryView.as_view(),name='wallet_history'),
     path('get_address/<str:user_id>/',AddressView.as_view(),name='get_address'),
-    path('update_address',AddressView.as_view(),name='update_address'),
-    path('get_profile</<str:user_id>/',ProfileView.as_view(),name='get_profile'),
+    path('update_address/',AddressView.as_view(),name='update_address'),
+    path('get_profile/<str:user_id>/',ProfileView.as_view(),name='get_profile'),
     path('update_profile/',ProfileView.as_view(),name='update_profile'),
 ]
