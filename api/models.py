@@ -25,7 +25,7 @@ class User(models.Model):
     referal_code = models.CharField(max_length=15, null=True, blank=True)
     wallet_amount = models.DecimalField(max_digits=10,decimal_places=2,default=Decimal('0.00'))
     society = models.ForeignKey(Society,on_delete=models.SET_NULL,null=True,blank=True,related_name='users')
-    address = models.TextField()
+    city = models.ForeignKey(City,on_delete=models.SET_NULL,null=True,blank=True,related_name='user_city')
     role = models.CharField(max_length=50,default='customer',choices=[('customer', 'customer'), ('admin', 'admin')])
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -104,6 +104,7 @@ class Order(models.Model):
     delivery_date = models.CharField(max_length=50, null=True, blank=True)
     delivery_slot = models.CharField(max_length=100, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    wallet_amount = models.DecimalField(max_digits=10, decimal_places=2)
     order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 

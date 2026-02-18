@@ -104,7 +104,7 @@ class AddToCartView(APIView):
         try:
             user = User.objects.get(id=user_id)
             product = Product.objects.get(id=product_id)
-            UserCart.objects.create(user=user, product=product)
+            # UserCart.objects.create(user=user, product=product)
             return Response({'message': 'Product added to cart successfully.'})
         except User.DoesNotExist:
             return Response({'error': 'User not found.'}, status=404)
@@ -119,7 +119,7 @@ class CartProductsView(APIView):
 
         try:
             user = User.objects.get(id=user_id)
-            cart_items = UserCart.objects.filter(user=user, is_order_checked_out=False)
+            cart_items = []
 
             product_map = {}
             for item in cart_items:
@@ -166,6 +166,10 @@ class PlaceOrderView(APIView):
             next_num = last_order.id + 1 if last_order else 1
             order_id_str = f"{next_num:04d}"
 
+            if data['wallet_amount']:
+                user.wallet_amount = user.wallet_amount - int(data['wallet_amount'])
+            else:
+                data['wallet_amount'] = 0    
             order = Order.objects.create(
                 order_id=order_id_str,
                 user=user,
@@ -174,6 +178,7 @@ class PlaceOrderView(APIView):
                 delivery_date=data['delivery_date'],
                 delivery_slot=data['delivery_slot'],
                 total_amount=data['order_value'],
+                wallet_amount=data['wallet_amount']
             )
 
             created_products = []
@@ -275,3 +280,51 @@ class WalletHistoryView(APIView):
             })
         except User.DoesNotExist:
             return Response({'message': "User not exist!"}, status=400)
+        
+class AddressView(APIView):
+    serializer_class = AddressSerializer
+    model = address
+
+    def get(self,request,user_id):
+        address_list = self.model.objects.filter(user__id=user_id)
+        serializer_data = self.serializer_class(address_list,many=True)
+        return Response({'data':serializer_data.data},status=status.HTTP_200_OK)
+    
+    def post(self,request):
+        try:
+            user_obj = User.objects.get(id=request.data.get('user_id'))
+            address_obj = address(full_address=request.data.get('full_address'),
+                                  instruction=request.data.get('instruction'),
+                                  user=user_obj)
+            address_obj.save()
+            return Response({'message':'Address Saved Succesfully'},status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
+
+class ProfileView(APIView):
+    serializer_class = RegisterSerializer
+    model = User
+
+    def get(self,request,user_id):
+        try:
+            user_obj = self.model.objects.get(id=user_id)
+            serializer_data = self.serializer_class(user_obj,many=False)
+            return Response({'data':serializer_data.data},status=status.HTTP_200_OK)  
+        except User.DoesNotExist:
+            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self,request):
+        try:
+            user_obj = self.model.objects.get(id=request.data.get('user_id'))
+            user_obj.username = request.data.get('username')
+            user_obj.email_id = request.data.get('email_id')
+            user_obj.contact_no = request.data.get('contact_no')
+            user_obj.password = request.data.get('password')
+            if request.data.get('society_id'):
+                user_obj.username = request.data.get('society_id')
+            if request.data.get('city_id'):
+                user_obj.username = request.data.get('city_id')    
+            return Response({'message':'data updated successfully'},status=status.HTTP_200_OK)  
+        except User.DoesNotExist:
+            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
+    
