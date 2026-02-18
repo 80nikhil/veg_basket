@@ -159,8 +159,8 @@ class ProductListView(View):
         try:
             User.objects.get(id=request.session.get('user_id'))
             context = {}
-            context['products'] = Product.objects.filter(is_deleted=False)
-            context['categories'] = Category.objects.filter(is_deleted=False)
+            context['products'] = Product.objects.filter()
+            context['categories'] = Category.objects.filter()
             context['units'] = Unit.objects.all().order_by('-id')
             context['cities'] = City.objects.all().order_by('-id')
             return render(request, self.template_name, context)
