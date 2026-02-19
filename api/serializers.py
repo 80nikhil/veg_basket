@@ -13,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'contact_no', 'email_id', 'referal_code', 'wallet_amount','role','society','city']
-        read_only_fields = ['id', 'email_id', 'referal_code', 'wallet_amount','role','society']
+        read_only_fields = ['id', 'email_id', 'referal_code', 'wallet_amount','role','society','city']
 
 
 class LoginSerializer(serializers.Serializer):
