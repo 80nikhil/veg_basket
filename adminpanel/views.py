@@ -455,4 +455,14 @@ class CityDeleteView(View):
         city.delete()
         messages.success(request, "City deleted 🗑️")
         return redirect('city_list')
+
+class SupportView(View):
+    template_name = 'support.html'
+
+    def get(self, request):
+        try:
+            User.objects.get(id=request.session.get('user_id'))
+            return render(request, self.template_name)
+        except:
+            return redirect('/login/')    
     
