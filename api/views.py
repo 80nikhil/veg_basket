@@ -8,7 +8,7 @@ from datetime import datetime as dt
 
 class SocietyListView(APIView):
     def get(self, request):
-        societies = Society.objects.all()
+        societies = Society.objects.all().order_by("-id")
         serializer = SocietySerializer(societies, many=True)
         return Response({'societies': serializer.data})
 
@@ -174,7 +174,7 @@ class PlaceOrderView(APIView):
                 order_id=order_id_str,
                 user=user,
                 society_id=data['society_id'],
-                address=data['address'],
+                new_address=data['address'],
                 delivery_date=data['delivery_date'],
                 delivery_slot=data['delivery_slot'],
                 total_amount=data['order_value'],
@@ -286,7 +286,7 @@ class AddressView(APIView):
     model = address
 
     def get(self,request,user_id):
-        address_list = self.model.objects.filter(user__id=user_id)
+        address_list = self.model.objects.filter(user__id=user_id).order_by("-id")
         serializer_data = self.serializer_class(address_list,many=True)
         return Response({'data':serializer_data.data},status=status.HTTP_200_OK)
     
@@ -328,3 +328,16 @@ class ProfileView(APIView):
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
     
+class UpdateOrderPaymentStatusView(APIView):
+    def post(self,request):
+        order_id = request.data.get('order_id')
+        payment_status = request.data.get('payment_status')
+        if not order_id or not payment_status:
+            return Response({'message':'order_id and payment_status are required!'},status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order_obj = Order.objects.get(order_id=order_id)
+            order_obj.payment_status = payment_status
+            order_obj.save()
+            return Response({'message':'Payment status updated successfully'},status=status.HTTP_200_OK)  
+        except Order.DoesNotExist:
+            return Response({'message':'Invalid Order id !'},status=status.HTTP_400_BAD_REQUEST)    
