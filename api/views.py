@@ -174,7 +174,7 @@ class PlaceOrderView(APIView):
                 order_id=order_id_str,
                 user=user,
                 society_id=data['society_id'],
-                new_address=data['address'],
+                new_address=address.objects.get(id=data['address']),
                 delivery_date=data['delivery_date'],
                 delivery_slot=data['delivery_slot'],
                 total_amount=data['order_value'],
