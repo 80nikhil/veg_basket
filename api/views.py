@@ -166,10 +166,10 @@ class PlaceOrderView(APIView):
             next_num = last_order.id + 1 if last_order else 1
             order_id_str = f"{next_num:04d}"
 
-            if data.get('wallet_amount'):
-                user.wallet_amount = user.wallet_amount - int(data.get('wallet_amount', 0))
+            if request.data.get('wallet_amount'):
+                user.wallet_amount = user.wallet_amount - int(request.data.get('wallet_amount', 0))
             else:
-                data['wallet_amount'] = 0    
+                request.data['wallet_amount'] = 0    
             order = Order.objects.create(
                 order_id=order_id_str,
                 user=user,
