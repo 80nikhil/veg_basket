@@ -335,9 +335,40 @@ class UpdateOrderPaymentStatusView(APIView):
         if not order_id or not payment_status:
             return Response({'message':'order_id and payment_status are required!'},status=status.HTTP_400_BAD_REQUEST)
         try:
-            order_obj = Order.objects.get(order_id=order_id)
+            order_obj = Order.objects.get(id=order_id)
             order_obj.payment_status = payment_status
             order_obj.save()
             return Response({'message':'Payment status updated successfully'},status=status.HTTP_200_OK)  
         except Order.DoesNotExist:
-            return Response({'message':'Invalid Order id !'},status=status.HTTP_400_BAD_REQUEST)    
+            return Response({'message':'Invalid Order id !'},status=status.HTTP_400_BAD_REQUEST)
+            
+class UpdateWalletView(APIView):
+    def post(self,request):
+        user_id = request.data.get('user_id')
+        amount = request.data.get('amount')
+        payment_type = request.data.get('payment_type')
+        performed_by_id = request.data.get('performed_by_id')
+
+        if not user_id or not amount or not payment_type:
+            return Response({'message':'user_id, amount and payment_type are required!'},status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user_obj = User.objects.get(id=user_id)
+            if payment_type == 'credit':
+                user_obj.wallet_amount += Decimal(amount)
+            elif payment_type == 'debit':
+                user_obj.wallet_amount -= Decimal(amount)
+            else:
+                return Response({'message':'Invalid payment type!'},status=status.HTTP_400_BAD_REQUEST)
+            user_obj.save()
+
+            WalletHistory.objects.create(
+                user=user_obj,
+                amount=Decimal(amount),
+                payment_type=payment_type,
+                performed_by_id=performed_by_id
+            )
+
+            return Response({'message':'Wallet updated successfully'},status=status.HTTP_200_OK)  
+        except User.DoesNotExist:
+            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)            

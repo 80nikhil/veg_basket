@@ -58,6 +58,7 @@ urlpatterns = [
         path('city/create/', CityCreateView.as_view(), name='city_create'), 
         path('city/update/<int:pk>/', CityUpdateView.as_view(), name='city_update'),
         path('city/delete/<int:pk>/', CityDeleteView.as_view(), name='city_delete'),
+        path('support/',SupportView.as_view(),name="support"),
 
 
 ]

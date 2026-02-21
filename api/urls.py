@@ -20,4 +20,7 @@ urlpatterns = [
     path('update_address/',AddressView.as_view(),name='update_address'),
     path('get_profile/<str:user_id>/',ProfileView.as_view(),name='get_profile'),
     path('update_profile/',ProfileView.as_view(),name='update_profile'),
+    path('update_order_payment_status/',UpdateOrderPaymentStatusView.as_view(),name='update_order_payment_status'),
+    path('update_wallet/',UpdateWalletView.as_view(),name='update_wallet'),
+
 ]
