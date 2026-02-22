@@ -178,7 +178,7 @@ class PlaceOrderView(APIView):
                 delivery_date=data['delivery_date'],
                 delivery_slot=data['delivery_slot'],
                 total_amount=data['order_value'],
-                wallet_amount=data['wallet_amount']
+                wallet_amount=request.data['wallet_amount']
             )
 
             created_products = []
