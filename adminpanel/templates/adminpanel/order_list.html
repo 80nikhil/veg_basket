@@ -1,154 +1,189 @@
-{% extends "adminpanel/base.html" %} {% block content %}
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<!-- DATATABLE CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="fw-bold">Orders</h4>
+    <h4 class="fw-bold">Orders</h4>
 </div>
 
 <!-- Messages -->
-{% if messages %} {% for message in messages %}
-<div class="alert alert-success">{{ message }}</div>
-{% endfor %} {% endif %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+{% endif %}
 
 <div class="card p-3 table-responsive">
-  <table class="table table-hover align-middle">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Order ID</th>
-        <th>User</th>
-        <th>Society</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+    <table id="ordersTable" class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Order ID</th>
+                <th>User</th>
+                <th>Society</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Created</th>
+                <th>Action</th>
+            </tr>
+        </thead>
 
-    <tbody>
-      {% for order in orders %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ order.order_id }}</td>
-        <td>{{ order.user.username }}</td>
-        <td>{{ order.society|default:"-" }}</td>
-        <td>₹ {{ order.total_amount }}</td>
-        <td>
-          <span class="badge bg-info text-dark">
-            {{ order.get_order_status_display }}
-          </span>
-        </td>
-        <td>{{ order.created_at|date:"M d, Y" }}</td>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.user.username }}</td>
+                <td>{{ order.society|default:"-" }}</td>
+                <td>₹ {{ order.total_amount }}</td>
 
-        <td>
-          <button
-            class="btn btn-sm btn-outline-success"
-            data-bs-toggle="modal"
-            data-bs-target="#updateOrder{{ order.id }}"
-          >
-            Update
-          </button>
-        </td>
-      </tr>
+                <!-- STATUS BADGE -->
+                <td>
+                    <span class="badge 
+                        {% if order.order_status == 'pending' %}bg-warning text-dark
+                        {% elif order.order_status == 'confirmed' %}bg-primary
+                        {% elif order.order_status == 'delivered' %}bg-success
+                        {% elif order.order_status == 'cancelled' %}bg-danger
+                        {% endif %}
+                    ">
+                        {{ order.get_order_status_display }}
+                    </span>
+                </td>
 
-      <!-- ORDER PRODUCTS ROW -->
-      <tr>
-        <td colspan="8">
-          <strong>Products:</strong>
-          <ul class="mb-0">
-            {% for item in order.order_products.all %}
-            <li>
-              {{ item.product.name }} × {{ item.quantity }} (₹ {{ item.price }})
-            </li>
+                <!-- PAYMENT BADGE -->
+                <td>
+                    <span class="badge 
+                        {% if order.payment_status == 'paid' %}bg-success
+                        {% elif order.payment_status == 'failed' %}bg-danger
+                        {% else %}bg-secondary
+                        {% endif %}
+                    ">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </td>
+
+                <td>{{ order.created_at|date:"M d, Y" }}</td>
+
+                <td>
+                    <button class="btn btn-sm btn-outline-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#updateOrder{{ order.id }}">
+                        View / Update
+                    </button>
+                </td>
+            </tr>
             {% endfor %}
-          </ul>
-        </td>
-      </tr>
-
-      {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+    </table>
 </div>
 
-<!-- UPDATE ORDER STATUS MODALS -->
+
+<!-- ================= MODALS ================= -->
 {% for order in orders %}
-<div class="modal fade" id="updateOrder{{ order.id }}">
-  <div class="modal-dialog modal-dialog-centered">
-    <form
-      method="post"
-      action="{% url 'order_update' order.id %}"
-      class="modal-content"
-    >
-      {% csrf_token %}
-      <div class="modal-header">
-        <h5 class="modal-title">Update Order Status</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
-      </div>
+<div class="modal fade" id="updateOrder{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form method="post" action="{% url 'order_update' order.id %}" class="modal-content">
+            {% csrf_token %}
 
-      <div class="modal-body">
-        <label class="form-label">Order Status</label>
-        <select name="order_status" class="form-control" required>
-          <option
-            value="pending"
-            {%
-            if
-            order.order_status=""
-            ="pending"
-            %}selected{%
-            endif
-            %}
-          >
-            Pending
-          </option>
-          <option
-            value="confirmed"
-            {%
-            if
-            order.order_status=""
-            ="confirmed"
-            %}selected{%
-            endif
-            %}
-          >
-            Confirmed
-          </option>
-          <option
-            value="delivered"
-            {%
-            if
-            order.order_status=""
-            ="delivered"
-            %}selected{%
-            endif
-            %}
-          >
-            Delivered
-          </option>
-          <option
-            value="cancelled"
-            {%
-            if
-            order.order_status=""
-            ="cancelled"
-            %}selected{%
-            endif
-            %}
-          >
-            Cancelled
-          </option>
-        </select>
-      </div>
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Order Details - {{ order.order_id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-theme">Update</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
-        </button>
-      </div>
-    </form>
-  </div>
+            <div class="modal-body">
+
+                <!-- CUSTOMER DETAILS -->
+                <h6 class="fw-bold">Customer Details</h6>
+                <p><strong>Name:</strong> {{ order.user.username }}</p>
+                <p><strong>Email:</strong> {{ order.user.email_id }}</p>
+                <p><strong>Contact:</strong> {{ order.user.contact_no }}</p>
+                <p><strong>Society:</strong> {{ order.society|default:"-" }}</p>
+
+                <hr>
+
+                <!-- ADDRESS -->
+                <h6 class="fw-bold">Delivery Address</h6>
+                {% if order.new_address %}
+                    <p>{{ order.new_address.full_address }}</p>
+                    <p><strong>Instruction:</strong> {{ order.new_address.instruction }}</p>
+                {% else %}
+                    <p>{{ order.address|default:"No address available" }}</p>
+                {% endif %}
+
+                <hr>
+
+                <!-- ORDER PRODUCTS -->
+                <h6 class="fw-bold">Ordered Products</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.order_products.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹ {{ item.price }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr>
+
+                <!-- ORDER SUMMARY -->
+                <h6 class="fw-bold">Order Summary</h6>
+                <p><strong>Total Amount:</strong> ₹ {{ order.total_amount }}</p>
+                <p><strong>Wallet Used:</strong> ₹ {{ order.wallet_amount }}</p>
+                <p><strong>Payment Status:</strong> {{ order.get_payment_status_display }}</p>
+
+                <hr>
+
+                <!-- UPDATE STATUS -->
+                <h6 class="fw-bold">Update Order Status</h6>
+                <select name="order_status" class="form-control" required>
+                    <option value="pending" {% if order.order_status == "pending" %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if order.order_status == "confirmed" %}selected{% endif %}>Confirmed</option>
+                    <option value="delivered" {% if order.order_status == "delivered" %}selected{% endif %}>Delivered</option>
+                    <option value="cancelled" {% if order.order_status == "cancelled" %}selected{% endif %}>Cancelled</option>
+                </select>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success">Update Status</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </form>
+    </div>
 </div>
-{% endfor %} {% endblock %}
+{% endfor %}
+
+
+<!-- DATATABLE JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#ordersTable').DataTable({
+        pageLength: 10,
+        ordering: true,
+        searching: true
+    });
+});
+</script>
+
+{% endblock %}

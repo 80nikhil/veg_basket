@@ -82,7 +82,7 @@ class ProductListView(APIView):
 
 class ProductByCategoryView(APIView):
     def get(self, request, category_id):
-        products = Product.objects.filter(category_id=category_id, is_deleted=False)
+        products = Product.objects.filter(category_id=category_id)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
     
