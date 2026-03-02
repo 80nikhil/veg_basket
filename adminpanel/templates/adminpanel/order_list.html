@@ -125,6 +125,7 @@
                             <tr>
                                 <th>Product</th>
                                 <th>Qty</th>
+                                <th>Unit</th>
                                 <th>Price</th>
                             </tr>
                         </thead>
@@ -132,7 +133,8 @@
                             {% for item in order.order_products.all %}
                             <tr>
                                 <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.quantity }}</td>    
+                                <td>{{ item.product.unit.name }}</td>
                                 <td>₹ {{ item.price }}</td>
                             </tr>
                             {% endfor %}
