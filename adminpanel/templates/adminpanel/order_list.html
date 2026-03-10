@@ -19,7 +19,7 @@
     <table id="ordersTable" class="table table-hover align-middle">
         <thead class="table-light">
             <tr>
-                <th>#</th>
+                <th>S.No.</th>
                 <th>Order ID</th>
                 <th>User</th>
                 <th>Society</th>
@@ -85,7 +85,7 @@
 {% for order in orders %}
 <div class="modal fade" id="updateOrder{{ order.id }}" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form method="post" action="{% url 'order_update' order.id %}" class="modal-content">
+        <form method="post" action="/order/update/{{ order.id }}/" class="modal-content">
             {% csrf_token %}
 
             <div class="modal-header">
@@ -125,7 +125,7 @@
                             <tr>
                                 <th>Product</th>
                                 <th>Qty</th>
-                                <th>Unit</th>
+                                <th>Order Qty</th>
                                 <th>Price</th>
                                 <th>Total Price</th>
                             </tr>
@@ -134,10 +134,13 @@
                             {% for item in order.order_products.all %}
                             <tr>
                                 <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>    
-                                <td>{{ item.product.unit.name }}</td>
-                                <td>₹ {{ item.product.price }}</td>
-                                <td>₹ {{ item.price }}</td>
+                                <td>{{ item.product.quantity }} {{ item.product.unit.name }}</td>
+                                <td>{{ item.quantity }}</td> 
+                                <td>₹ {{ item.product.price }}</td> 
+                                <td>₹ <span class="total-price"
+                                    data-qty="{{ item.quantity }}"
+                                    data-price="{{ item.product.price }}">
+                                </span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -181,12 +184,17 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
-$(document).ready(function () {
-    $('#ordersTable').DataTable({
-        pageLength: 10,
-        ordering: true,
-        searching: true
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".total-price").forEach(function(el) {
+
+        let qty = parseFloat(el.getAttribute("data-qty"));
+        let price = parseFloat(el.getAttribute("data-price"));
+
+        el.innerText = qty * price;
+
     });
+
 });
 </script>
 

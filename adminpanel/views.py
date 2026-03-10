@@ -343,13 +343,14 @@ class FlashSaleDeleteView(View):
 class OrderListView(ListView):
     model = Order
     template_name = 'adminpanel/order_list.html'
-    context_object_name = 'orders'
 
-    def get_queryset(self):
+    def get(self, request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return Order.objects.all().order_by('-id')
-        except: 
+            orders = Order.objects.all().order_by('-id')[:20]
+            context = {"orders": orders}
+            return render(request, self.template_name, context)
+        except:
             return redirect('/login/')
 
 class OrderUpdateView(View):
