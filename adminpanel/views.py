@@ -466,4 +466,41 @@ class SupportView(View):
             return render(request, self.template_name)
         except:
             return redirect('/login/')    
+
+
+class BannerListView(View):
+    template_name = "adminpanel/banner_list.html"
+
+    def get(self, request):
+        try:
+            User.objects.get(id=request.session.get('user_id'))
+            banners = Aids_banner.objects.all().order_by('-id')
+            return render(request, self.template_name, {"banners": banners})
+        except:
+            return redirect('/login/')
+
+
+class BannerCreateView(View):
+
+    def post(self, request):
+        try:
+            User.objects.get(id=request.session.get('user_id'))
+            image = request.FILES.get("image")
+
+            if image:
+                Aids_banner.objects.create(image=image)
+                messages.success(request, "Banner added successfully")
+
+            return redirect("banner_list")  
+        except:
+            return redirect('/login/')
+
+class BannerDeleteView(View):
+
+    def post(self, request, pk):
+        banner = Aids_banner.objects.get(id=pk)
+        banner.delete()
+
+        messages.success(request, "Banner deleted successfully")
+        return redirect("banner_list")                  
     

@@ -169,7 +169,8 @@ class PlaceOrderView(APIView):
             if request.data.get('wallet_amount'):
                 user.wallet_amount = user.wallet_amount - int(request.data.get('wallet_amount', 0))
             else:
-                request.data['wallet_amount'] = 0    
+                request.data['wallet_amount'] = 0
+            user.save()        
             order = Order.objects.create(
                 order_id=order_id_str,
                 user=user,
@@ -185,7 +186,15 @@ class PlaceOrderView(APIView):
 
             for p in data['products']:
                 product = Product.objects.get(id=p['product_id'])
-                OrderProduct.objects.create(order=order, product=product, quantity=p['quantity'])
+                try:
+                    flas_obj = FlashSale.objects.get(product=product)
+                    if int(p['quantity']) == 1:
+                        price = flas_obj.product_flash_price
+                    else:
+                        price = product.price  
+                except FlashSale.DoesNotExist:
+                    price = product.price         
+                OrderProduct.objects.create(order=order, product=product, quantity=p['quantity'],price=price)
                 created_products.append({'product_id': product.id, 'quantity': p['quantity']})
 
             return Response({

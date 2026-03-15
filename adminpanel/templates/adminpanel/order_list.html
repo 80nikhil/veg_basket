@@ -103,7 +103,7 @@
                 <p><strong>Email:</strong> {{ order.user.email_id }}</p>
                 <p><strong>Contact:</strong> {{ order.user.contact_no }}</p>
                 <p><strong>Society:</strong> {{ order.society|default:"-" }}</p>
-
+                <p><strong>Delivery Slot:</strong> {{ order.delivery_slot|default:"Not specified" }}</p>
                 <hr>
 
                 <!-- ADDRESS -->
@@ -114,6 +114,8 @@
                 {% else %}
                     <p>{{ order.address|default:"No address available" }}</p>
                 {% endif %}
+
+                
 
                 <hr>
 
@@ -136,7 +138,7 @@
                                 <td>{{ item.product.name }}</td>
                                 <td>{{ item.product.quantity }} {{ item.product.unit.name }}</td>
                                 <td>{{ item.quantity }}</td> 
-                                <td>₹ {{ item.product.price }}</td> 
+                                <td>₹ {{ item.price }}</td> 
                                 <td>₹ <span class="total-price"
                                     data-qty="{{ item.quantity }}"
                                     data-price="{{ item.product.price }}">

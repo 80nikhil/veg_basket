@@ -1,0 +1,93 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Banners</h4>
+
+  <button class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#addBannerModal">
+    <i class="fa fa-plus"></i> Add Banner
+  </button>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-success">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="card p-3 table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Banner</th>
+        <th>Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for banner in banners %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+
+        <td>
+          <img src="{{ banner.image.url }}" width="120" class="rounded">
+        </td>
+
+        <td>{{ banner.created_at|date:"M d Y" }}</td>
+
+        <td>
+          <form method="post" action="{% url 'banner_delete' banner.id %}" style="display:inline">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+  </table>
+</div>
+
+<!-- ADD BANNER MODAL -->
+
+<div class="modal fade" id="addBannerModal">
+  <div class="modal-dialog modal-dialog-centered">
+
+    <form method="post" action="{% url 'banner_create' %}" enctype="multipart/form-data" class="modal-content">
+      {% csrf_token %}
+
+      <div class="modal-header">
+        <h5 class="modal-title">Add Banner</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <label class="form-label">Banner Image</label>
+
+        <input type="file"
+               name="image"
+               class="form-control"
+               accept="image/*"
+               required>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-theme">Upload</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

@@ -126,5 +126,9 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}" 
+
+class Aids_banner(models.Model):
+    image = models.ImageField(upload_to='banners/')
+    created_at = models.DateTimeField(auto_now_add=True)        
     
     

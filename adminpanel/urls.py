@@ -60,5 +60,10 @@ urlpatterns = [
         path('city/delete/<int:pk>/', CityDeleteView.as_view(), name='city_delete'),
         path('support/',SupportView.as_view(),name="support"),
 
+        #manage Banners aid
+        path('banners/', BannerListView.as_view(), name="banner_list"),
+        path('banner/create/', BannerCreateView.as_view(), name="banner_create"),
+        path('banner/delete/<int:pk>/', BannerDeleteView.as_view(), name="banner_delete"),
+
 
 ]
