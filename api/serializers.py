@@ -119,4 +119,14 @@ class AddressSerializer(serializers.ModelSerializer):
 class WalletHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WalletHistory
-        fields = '__all__'        
+        fields = '__all__'  
+
+class SlotMasterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SlotMaster
+        fields = '__all__'
+
+class SeettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Settings
+        fields = '__all__'                      

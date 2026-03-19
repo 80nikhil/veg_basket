@@ -50,7 +50,10 @@ class LoginView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         contact_no = serializer.validated_data['contact_no']
-
+        excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date())
+        slots = SlotMaster.objects.all().exclude(slot__in=excluded_slot)
+        slots_data = SlotMasterSerializer(slots, many=True).data
+        setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
         try:
             user = User.objects.get(contact_no=contact_no)
             return Response({
@@ -60,7 +63,9 @@ class LoginView(APIView):
                 'contact_no': user.contact_no,
                 'email_id': user.email_id,
                 'referal_code': user.referal_code,
-                'wallet_amount': user.wallet_amount
+                'wallet_amount': user.wallet_amount,
+                'slots':slots_data,
+                'setting':setting_data
             })
         except User.DoesNotExist:
             return Response(
@@ -318,21 +323,30 @@ class ProfileView(APIView):
         try:
             user_obj = self.model.objects.get(id=user_id)
             serializer_data = self.serializer_class(user_obj,many=False)
-            return Response({'data':serializer_data.data},status=status.HTTP_200_OK)  
+            excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date())
+            slots = SlotMaster.objects.all().exclude(slot__in=excluded_slot)
+            slots_data = SlotMasterSerializer(slots, many=True).data
+            setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
+            return Response({'data':serializer_data.data,'slots':slots_data,'setting':setting_data},status=status.HTTP_200_OK)  
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
 
     def post(self,request):
         try:
             user_obj = self.model.objects.get(id=request.data.get('user_id'))
-            user_obj.username = request.data.get('username')
-            user_obj.email_id = request.data.get('email_id')
-            user_obj.contact_no = request.data.get('contact_no')
-            user_obj.password = request.data.get('password')
+            if request.data.get('fcm_token'):
+                user_obj.fcm_token = request.data.get('fcm_token')
+            else:    
+                user_obj.username = request.data.get('username')
+                user_obj.email_id = request.data.get('email_id')
+                user_obj.contact_no = request.data.get('contact_no')
+                user_obj.password = request.data.get('password')
+
             if request.data.get('society_id'):
                 user_obj.society_id = request.data.get('society_id')
             if request.data.get('city_id'):
-                user_obj.city_id = request.data.get('city_id')    
+                user_obj.city_id = request.data.get('city_id')
+            user_obj.save()        
             return Response({'message':'data updated successfully'},status=status.HTTP_200_OK)  
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
