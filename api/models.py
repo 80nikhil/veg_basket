@@ -27,6 +27,7 @@ class User(models.Model):
     society = models.ForeignKey(Society,on_delete=models.SET_NULL,null=True,blank=True,related_name='users')
     city = models.ForeignKey(City,on_delete=models.SET_NULL,null=True,blank=True,related_name='user_city')
     role = models.CharField(max_length=50,default='customer',choices=[('customer', 'customer'), ('admin', 'admin')])
+    fcm_token = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -130,5 +131,22 @@ class OrderProduct(models.Model):
 class Aids_banner(models.Model):
     image = models.ImageField(upload_to='banners/')
     created_at = models.DateTimeField(auto_now_add=True)        
+
+class SlotMaster(models.Model):
+    name = models.CharField(max_length=100)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return self.name
+
+class EliminatedSlot(models.Model):
+    date = models.DateField()
+    slot = models.ForeignKey(SlotMaster, on_delete=models.CASCADE)
+
+class Settings(models.Model):
+    key = models.CharField(max_length=50, unique=True)
+    value = models.DecimalField(max_digits=10, decimal_places=2)    
+
     
     

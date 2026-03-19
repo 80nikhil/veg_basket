@@ -65,5 +65,12 @@ urlpatterns = [
         path('banner/create/', BannerCreateView.as_view(), name="banner_create"),
         path('banner/delete/<int:pk>/', BannerDeleteView.as_view(), name="banner_delete"),
 
-
+        path('send-firebase/', SendFirebaseNotificationView.as_view(), name='send_firebase'),
+        path('wallet/update/<int:user_id>/', WalletUpdateView.as_view(), name='wallet_update'),
+        path('wallet/update-all/', WalletUpdateAllView.as_view(), name='wallet_update_all'),
+        path('slot-management/', SlotPageView.as_view(), name='slot_page'),
+        path('eliminate-slot/', EliminateSlotView.as_view(), name='eliminate_slot'),
+        path('restore-slot/', RestoreSlotView.as_view(), name='restore_slot'),
+        path('create-slot/', CreateSlotView.as_view(), name='create_slot'),
+        path('update-min-order/', UpdateMinOrderView.as_view(), name='update_min_order'),
 ]

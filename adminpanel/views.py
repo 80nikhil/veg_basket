@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from api.models import *
@@ -6,7 +7,8 @@ from django.views.generic import ListView
 from django.contrib import messages
 from decimal import Decimal
 from django.shortcuts import get_object_or_404, redirect
-from api.models import WalletHistory
+from .utils.firebase import send_firebase_notification
+from django.utils.dateparse import parse_date
 
 class TermsAndPolicyViewset(View):
     get_template = 'terms_and_conditions.html'
@@ -376,34 +378,6 @@ class UserListView(ListView):
         except: 
             return redirect('/login/')
 
-
-class WalletUpdateView(View):
-    def post(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
-
-        amount = Decimal(request.POST.get('amount'))
-        payment_type = request.POST.get('payment_type')
-
-        if payment_type == 'credit':
-            user.wallet_amount += amount
-
-        elif payment_type == 'debit':
-            if user.wallet_amount < amount:
-                messages.error(request, "Insufficient wallet balance ❌")
-                return redirect('user_list')
-            user.wallet_amount -= amount
-
-        user.save()
-
-        WalletHistory.objects.create(
-            user=user,
-            amount=amount,
-            payment_type=payment_type
-        )
-
-        messages.success(request, "Wallet updated successfully ✅")
-        return redirect('user_list')
-    
 class WalletHistoryListView(ListView):
     model = WalletHistory
     template_name = 'adminpanel/wallet_history.html'
@@ -504,3 +478,131 @@ class BannerDeleteView(View):
         messages.success(request, "Banner deleted successfully")
         return redirect("banner_list")                  
     
+
+class SendFirebaseNotificationView(View):
+    template_name = "adminpanel/send_firebase.html"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        title = request.POST.get("title")
+        body = request.POST.get("body")
+        if not title or not body:
+            messages.warning(request, "Title and Body are required!")
+            return redirect("send_firebase")
+
+        # Get all tokens
+        tokens = list(User.objects.values_list("fcm_token", flat=True))
+
+        # If no tokens, send default notification to everyone (or just skip)
+        if not tokens:
+            # Optionally, define default tokens if you store them somewhere
+            messages.warning(request, "No user device tokens found. Sending default notification skipped.")
+            return redirect("send_firebase")
+
+        # Send notification
+        result = send_firebase_notification(tokens, title, body)
+
+        messages.success(
+            request,
+            f"Notification sent! Success: {result['success']}, Fail: {result['failure']}"
+        )
+        return redirect("send_firebase")    
+    
+
+class WalletUpdateView(View):
+    def post(self, request, user_id):
+        amount = float(request.POST.get("amount", 0))
+        txn_type = request.POST.get("payment_type")
+        user = User.objects.get(id=user_id)
+
+        if txn_type == "credit":
+            user.wallet_amount += amount
+        elif txn_type == "debit":
+            user.wallet_amount -= amount
+        user.save()
+        WalletHistory.objects.create(
+            user=user,
+            amount=amount,
+            payment_type=txn_type
+        )
+
+        return JsonResponse({"success": True, "user_id": user.id, "new_amount": user.wallet_amount})
+
+class WalletUpdateAllView(View):
+    def post(self, request):
+        amount = float(request.POST.get("amount", 0))
+        txn_type = request.POST.get("payment_type")
+
+        updated_wallets = []
+        users = User.objects.all()  # Update all records
+        for user in users:
+            if txn_type == "credit":
+                user.wallet_amount += amount
+            else:
+                user.wallet_amount -= amount
+            user.save()
+            WalletHistory.objects.create(
+                user=user,
+                amount=amount,
+                payment_type=txn_type
+            )
+            updated_wallets.append({"id": user.id, "new_amount": user.wallet_amount})
+
+        return JsonResponse({"success": True, "updated_wallets": updated_wallets})    
+
+class SlotPageView(View):
+    def get(self, request):
+        date = request.GET.get("date")
+
+        slots = SlotMaster.objects.all()
+        eliminated = EliminatedSlot.objects.filter(date=date) if date else []
+
+        min_order = Settings.objects.filter(key="min_order").first()
+        min_val = min_order.value if min_order else 0
+
+        return render(request, "adminpanel/slot_management.html", {
+            "slots": slots,
+            "eliminated_slots": eliminated,
+            "selected_date": date,
+            "min_order": min_val
+        })
+
+class EliminateSlotView(View):
+    def post(self, request):
+        slot_id = request.POST.get("slot_id")
+        date = request.POST.get("date")
+
+        EliminatedSlot.objects.get_or_create(slot_id=slot_id, date=date)
+
+        return redirect(f"/slot-management/?date={date}")
+
+class RestoreSlotView(View):
+    def post(self, request):
+        obj = EliminatedSlot.objects.get(id=request.POST.get("id"))
+        date = obj.date
+        obj.delete()
+        return redirect(f"/slot-management/?date={date}")
+    
+class CreateSlotView(View):
+    def post(self, request):
+        SlotMaster.objects.create(
+            name=request.POST.get("name"),
+            start_time=request.POST.get("start_time"),
+            end_time=request.POST.get("end_time")
+        )
+        return redirect("/slot-management/")    
+    
+class UpdateMinOrderView(View):
+    def post(self, request):
+        val = request.POST.get("min_order")
+
+        try:
+            obj = Settings.objects.get(key="min_order")
+            obj.value = val
+            obj.save()
+        except Settings.DoesNotExist:
+            obj = Settings.objects.create(key="min_order",value=val)
+        return redirect("/slot-management/")                    
+

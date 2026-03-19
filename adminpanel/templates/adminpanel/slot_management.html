@@ -1,0 +1,142 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold">Slot Management</h4>
+
+  <div>
+    <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#createSlotModal">
+      <i class="fa fa-plus"></i> Create Slot
+    </button>
+
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#minOrderModal">
+      <i class="fa fa-rupee"></i> Minimum Order
+    </button>
+  </div>
+</div>
+
+<!-- ================= SELECT DATE + SLOT ================= -->
+<div class="card p-3 mb-3">
+  <form method="post" action="{% url 'eliminate_slot' %}" class="row">
+    {% csrf_token %}
+
+    <div class="col-md-3">
+      <label>Date</label>
+      <input type="date" name="date" value="{{ selected_date }}" class="form-control" required>
+    </div>
+
+    <div class="col-md-4">
+      <label>Select Slot</label>
+      <select name="slot_id" class="form-control" required>
+        <option value="">-- Select Slot --</option>
+        {% for slot in slots %}
+        <option value="{{ slot.id }}">
+          {{ slot.name }} ({{ slot.start_time }} - {{ slot.end_time }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-danger w-100">Eliminate</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- ================= ELIMINATED SLOTS ================= -->
+<div class="card p-3">
+  <h5>Eliminated Slots ({{ selected_date }})</h5>
+
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Slot</th>
+        <th>Time</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for es in eliminated_slots %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ es.slot.name }}</td>
+        <td>{{ es.slot.start_time }} - {{ es.slot.end_time }}</td>
+        <td>
+          <form method="post" action="{% url 'restore_slot' %}">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="{{ es.id }}">
+            <button class="btn btn-sm btn-success">Restore</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center">No eliminated slots</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ================= CREATE SLOT MODAL ================= -->
+<div class="modal fade" id="createSlotModal">
+  <div class="modal-dialog">
+    <form method="post" action="{% url 'create_slot' %}" class="modal-content">
+      {% csrf_token %}
+
+      <div class="modal-header">
+        <h5>Create Slot</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label>Slot Name</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label>Start Time</label>
+          <input type="time" name="start_time" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label>End Time</label>
+          <input type="time" name="end_time" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MIN ORDER MODAL ================= -->
+<div class="modal fade" id="minOrderModal">
+  <div class="modal-dialog">
+    <form method="post" action="{% url 'update_min_order' %}" class="modal-content">
+      {% csrf_token %}
+
+      <div class="modal-header">
+        <h5>Minimum Order Value</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <label>Amount</label>
+        <input type="number" name="min_order" value="{{ min_order }}" class="form-control" required>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-warning">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
