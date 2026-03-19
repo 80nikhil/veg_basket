@@ -4,11 +4,11 @@ from django.conf import settings
 import os
 from firebase_admin import messaging
 
-fire_cred_json = {
+# fire_cred_json = {
         
-        }
-cred = credentials.Certificate(fire_cred_json)
-firebase_admin.initialize_app(cred)
+#         }
+# cred = credentials.Certificate(fire_cred_json)
+# firebase_admin.initialize_app(cred)
 
 def send_firebase_notification(tokens, title, body, data=None):
     """
