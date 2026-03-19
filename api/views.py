@@ -50,10 +50,6 @@ class LoginView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         contact_no = serializer.validated_data['contact_no']
-        excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date()).values_list('slot_id', flat=True)
-        slots = SlotMaster.objects.exclude(id__in=excluded_slot)
-        slots_data = SlotMasterSerializer(slots, many=True).data
-        setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
         try:
             user = User.objects.get(contact_no=contact_no)
             return Response({
@@ -63,9 +59,7 @@ class LoginView(APIView):
                 'contact_no': user.contact_no,
                 'email_id': user.email_id,
                 'referal_code': user.referal_code,
-                'wallet_amount': user.wallet_amount,
-                'slots':slots_data,
-                'setting':setting_data
+                'wallet_amount': user.wallet_amount
             })
         except User.DoesNotExist:
             return Response(
@@ -315,6 +309,14 @@ class AddressView(APIView):
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
 
+class GetSlotsView(APIView):
+    def post(self,request):
+        date = request.data.get('date')
+        excluded_slot = EliminatedSlot.objects.filter(date=date).values_list('slot_id', flat=True)
+        slots = SlotMaster.objects.exclude(id__in=excluded_slot)
+        slots_data = SlotMasterSerializer(slots, many=True).data
+        return Response({'slots':slots_data},status=status.HTTP_200_OK)
+
 class ProfileView(APIView):
     serializer_class = RegisterSerializer
     model = User
@@ -323,11 +325,11 @@ class ProfileView(APIView):
         try:
             user_obj = self.model.objects.get(id=user_id)
             serializer_data = self.serializer_class(user_obj,many=False)
-            excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date()).values_list('slot_id', flat=True)
-            slots = SlotMaster.objects.exclude(id__in=excluded_slot)
-            slots_data = SlotMasterSerializer(slots, many=True).data
-            setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
-            return Response({'data':serializer_data.data,'slots':slots_data,'setting':setting_data},status=status.HTTP_200_OK)  
+            try:
+                minimum_value = Settings.objects.get(key='minimum_order_value').value
+            except Settings.DoesNotExist:
+                minimum_value = 100    
+            return Response({'data':serializer_data.data,'minimum_value':minimum_value},status=status.HTTP_200_OK)  
         except User.DoesNotExist:
             return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)
 
