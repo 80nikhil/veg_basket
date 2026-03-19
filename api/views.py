@@ -50,8 +50,8 @@ class LoginView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         contact_no = serializer.validated_data['contact_no']
-        excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date())
-        slots = SlotMaster.objects.all().exclude(slot__in=excluded_slot)
+        excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date()).values_list('slot_id', flat=True)
+        slots = SlotMaster.objects.exclude(id__in=excluded_slot)
         slots_data = SlotMasterSerializer(slots, many=True).data
         setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
         try:
@@ -323,8 +323,8 @@ class ProfileView(APIView):
         try:
             user_obj = self.model.objects.get(id=user_id)
             serializer_data = self.serializer_class(user_obj,many=False)
-            excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date())
-            slots = SlotMaster.objects.all().exclude(slot__in=excluded_slot)
+            excluded_slot = EliminatedSlot.objects.filter(date=dt.now().date()).values_list('slot_id', flat=True)
+            slots = SlotMaster.objects.exclude(id__in=excluded_slot)
             slots_data = SlotMasterSerializer(slots, many=True).data
             setting_data = SeettingsSerializer(Settings.objects.all(), many=True).data
             return Response({'data':serializer_data.data,'slots':slots_data,'setting':setting_data},status=status.HTTP_200_OK)  
