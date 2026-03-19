@@ -4,10 +4,10 @@ from django.conf import settings
 import os
 from firebase_admin import messaging
 
-# Path to your service account JSON
-FIREBASE_CRED_PATH = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
-
-cred = credentials.Certificate(FIREBASE_CRED_PATH)
+fire_cred_json = {
+        
+        }
+cred = credentials.Certificate(fire_cred_json)
 firebase_admin.initialize_app(cred)
 
 def send_firebase_notification(tokens, title, body, data=None):
