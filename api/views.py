@@ -342,7 +342,7 @@ class ProfileView(APIView):
                 user_obj.username = request.data.get('username')
                 user_obj.email_id = request.data.get('email_id')
                 user_obj.contact_no = request.data.get('contact_no')
-                if request.data.get('society_id'):
+                if request.data.get('password'):
                     user_obj.password = request.data.get('password')
                 if request.data.get('society_id'):
                     user_obj.society_id = request.data.get('society_id')
