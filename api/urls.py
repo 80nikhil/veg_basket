@@ -22,6 +22,7 @@ urlpatterns = [
     path('update_profile/',ProfileView.as_view(),name='update_profile'),
     path('update_order_payment_status/',UpdateOrderPaymentStatusView.as_view(),name='update_order_payment_status'),
     path('update_wallet/',UpdateWalletView.as_view(),name='update_wallet'),
-    path('get_slots/',GetSlotsView.as_view(),name='get_slots')
-
+    path('get_slots/',GetSlotsView.as_view(),name='get_slots'),
+    path('create_order/',CreateOrderView.as_view(),name='create_order'),
+    path('get_banners/',GetBanners.as_view(),name='get_banners'),
 ]

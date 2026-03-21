@@ -129,4 +129,17 @@ class SlotMasterSerializer(serializers.ModelSerializer):
 class SeettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Settings
-        fields = '__all__'                      
+        fields = '__all__'   
+
+class AidsBannerSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Aids_banner
+        fields = ['id', 'image', 'created_at']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None                           

@@ -1,10 +1,12 @@
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
+from rest_framework import request, status
 from .models import *
 from .serializers import *
 from datetime import datetime as dt
+import razorpay
 
 class SocietyListView(APIView):
     def get(self, request):
@@ -396,4 +398,31 @@ class UpdateWalletView(APIView):
 
             return Response({'message':'Wallet updated successfully'},status=status.HTTP_200_OK)  
         except User.DoesNotExist:
-            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST)            
+            return Response({'message':'Invalid User id !'},status=status.HTTP_400_BAD_REQUEST) 
+
+class CreateOrderView(APIView):
+    def get(self,request):
+        client = razorpay.Client(auth=("rzp_live_STOoFC5gRgltEh", "Vv1CVExc957RgXh1SmtL6Xp5"))
+
+        amount = int(request.GET.get("amount")) * 100
+
+        order = client.order.create({
+            "amount": amount,
+            "currency": "INR",
+            "payment_capture": 1
+        })
+
+        return JsonResponse({
+            "order_id": order["id"]
+        })     
+
+
+class GetBanners(APIView):
+    
+    def get(self,request):
+        banneers = Aids_banner.objects.all().order_by("-id")
+        serializer = AidsBannerSerializer(banneers, many=True)
+        return JsonResponse({
+            "message": "Banners retrieved successfully",
+            "data": serializer.data
+        },status=status.HTTP_200_OK)                         
