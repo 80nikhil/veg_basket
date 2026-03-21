@@ -418,10 +418,10 @@ class CreateOrderView(APIView):
 
 
 class GetBanners(APIView):
-    
+
     def get(self,request):
         banneers = Aids_banner.objects.all().order_by("-id")
-        serializer = AidsBannerSerializer(banneers, many=True)
+        serializer = AidsBannerSerializer(banneers, many=True, context={'request': request})
         return JsonResponse({
             "message": "Banners retrieved successfully",
             "data": serializer.data
