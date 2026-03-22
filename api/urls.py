@@ -25,4 +25,5 @@ urlpatterns = [
     path('get_slots/',GetSlotsView.as_view(),name='get_slots'),
     path('create_order/',CreateOrderView.as_view(),name='create_order'),
     path('get_banners/',GetBanners.as_view(),name='get_banners'),
+    path('get_related_products/<int:product_id>/',GetRelatedProducts.as_view(),name='get_related_products'),
 ]

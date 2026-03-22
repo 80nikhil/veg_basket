@@ -425,4 +425,19 @@ class GetBanners(APIView):
         return JsonResponse({
             "message": "Banners retrieved successfully",
             "data": serializer.data
-        },status=status.HTTP_200_OK)                         
+        },status=status.HTTP_200_OK)  
+
+class GetRelatedProducts(APIView):
+    def get(self,request,product_id):
+        try:
+            product_obj = Product.objects.get(id=product_id)
+            related_products = Product.objects.filter(name__icontains=product_obj.name)
+            serializer = ProductSerializer(related_products, many=True, context={'request': request})
+            return JsonResponse({
+                "message": "Related products retrieved successfully",
+                "products": serializer.data
+            },status=status.HTTP_200_OK)  
+        except Product.DoesNotExist:
+            return JsonResponse({
+                "message": "Product not found"
+            },status=status.HTTP_404_NOT_FOUND)
