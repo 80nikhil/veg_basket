@@ -418,7 +418,6 @@ class CreateOrderView(APIView):
 
 
 class GetBanners(APIView):
-
     def get(self,request):
         banneers = Aids_banner.objects.all().order_by("-id")
         serializer = AidsBannerSerializer(banneers, many=True, context={'request': request})
@@ -441,3 +440,21 @@ class GetRelatedProducts(APIView):
             return JsonResponse({
                 "message": "Product not found"
             },status=status.HTTP_404_NOT_FOUND)
+        
+class CancelOrderView(APIView):
+    def get(self,request,order_id):
+        try:
+            order_obj = Order.objects.get(order_id=order_id)
+            if order_obj.order_status == 'cancelled':
+                return JsonResponse({
+                    "message": "Order is already cancelled"
+                },status=status.HTTP_400_BAD_REQUEST)  
+            order_obj.order_status = 'cancelled'
+            order_obj.save()
+            return JsonResponse({
+                "message": "Order cancelled successfully"
+            },status=status.HTTP_200_OK)  
+        except Order.DoesNotExist:
+            return JsonResponse({
+                "message": "Order not found"
+            },status=status.HTTP_404_NOT_FOUND)        
