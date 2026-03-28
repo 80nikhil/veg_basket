@@ -513,7 +513,7 @@ class SendFirebaseNotificationView(View):
 
 class WalletUpdateView(View):
     def post(self, request, user_id):
-        amount = float(request.POST.get("amount", 0))
+        amount = Decimal(request.POST.get("amount", 0))
         txn_type = request.POST.get("payment_type")
         user = User.objects.get(id=user_id)
 

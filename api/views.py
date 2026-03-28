@@ -237,6 +237,8 @@ class OrderItemsView(APIView):
         order_id = request.GET.get('order_id')
         if not order_id:
             return Response({'error': 'order_id is required.'}, status=400)
+        if len(str(order_id)) < 4:
+            order_id = order_id.zfill(4)
         try:
             order = Order.objects.get(order_id=order_id)
             items = OrderProduct.objects.filter(order=order)
@@ -328,7 +330,7 @@ class ProfileView(APIView):
             user_obj = self.model.objects.get(id=user_id)
             serializer_data = self.serializer_class(user_obj,many=False)
             try:
-                minimum_value = Settings.objects.get(key='minimum_order_value').value
+                minimum_value = Settings.objects.get(key='min_order').value
             except Settings.DoesNotExist:
                 minimum_value = 100    
             return Response({'data':serializer_data.data,'minimum_value':minimum_value},status=status.HTTP_200_OK)  
