@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import request, status
+from django.db.models import Sum
 from .models import *
 from .serializers import *
 from datetime import datetime as dt
@@ -75,19 +76,57 @@ class CategoryListView(APIView):
         serializer = CategorySerializer(categories, many=True, context={'request': request})
         return Response({'categories': serializer.data})
 
-class ProductListView(APIView):
+class ProductListView2(APIView):
     def get(self, request):
         products = Product.objects.filter(is_deleted=False)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
 
-class ProductByCategoryView(APIView):
-    def get(self, request, category_id):
-        products = Product.objects.filter(category_id=category_id)
+class ProductListView(APIView):
+    def get(self, request, user_id):
+        products = Product.objects.all()
+        try:
+            user = User.objects.get(id=user_id)
+            if user.city:
+                products = products.filter(cities=user.city)
+        except User.DoesNotExist:
+            pass
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
     
+class ProductByCategoryView(APIView):
+    def get(self, request, category_id,user_id):
+        products = Product.objects.filter(category_id=category_id)
+        try:
+            user = User.objects.get(id=user_id)
+            if user.city:
+                products = products.filter(cities=user.city)
+        except User.DoesNotExist:
+            pass
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response({'products': serializer.data})
+    
+    
 class FlashSaleListView(APIView):
+    def get(self, request,user_id):
+        flash_items = FlashSale.objects.all()
+        try:
+            user = User.objects.get(id=user_id)
+            if user.city:
+                flash_items = flash_items.filter(product__cities=user.city)
+        except User.DoesNotExist:
+            pass        
+        serializer = FlashSaleSerializer(flash_items, many=True, context={'request': request})
+        return Response({'flash_sales': serializer.data})
+
+    
+class ProductByCategoryView2(APIView):
+    def get(self, request, category_id):
+        products = Product.objects.filter(category_id=category_id)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response({'products': serializer.data})    
+    
+class FlashSaleListView2(APIView):
     def get(self, request):
         flash_items = FlashSale.objects.filter(is_in_stock=True)
         serializer = FlashSaleSerializer(flash_items, many=True, context={'request': request})
@@ -459,4 +498,15 @@ class CancelOrderView(APIView):
         except Order.DoesNotExist:
             return JsonResponse({
                 "message": "Order not found"
-            },status=status.HTTP_404_NOT_FOUND)        
+            },status=status.HTTP_404_NOT_FOUND)   
+
+class MostlyOrderedProductsView(APIView):
+    def get(self,request):
+        order_products = OrderProduct.objects.values('product_id').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
+        product_ids = [op['product_id'] for op in order_products]
+        products = Product.objects.filter(id__in=product_ids)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return JsonResponse({
+            "message": "Mostly ordered products retrieved successfully",
+            "products": serializer.data
+        },status=status.HTTP_200_OK)             

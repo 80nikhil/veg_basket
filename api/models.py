@@ -26,7 +26,7 @@ class User(models.Model):
     wallet_amount = models.DecimalField(max_digits=10,decimal_places=2,default=Decimal('0.00'))
     society = models.ForeignKey(Society,on_delete=models.SET_NULL,null=True,blank=True,related_name='users')
     city = models.ForeignKey(City,on_delete=models.SET_NULL,null=True,blank=True,related_name='user_city')
-    role = models.CharField(max_length=50,default='customer',choices=[('customer', 'customer'), ('admin', 'admin')])
+    role = models.CharField(max_length=50,default='customer',choices=[('customer', 'customer'), ('admin', 'admin'), ('delivery', 'Delivery Boy')])
     fcm_token = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -114,6 +114,9 @@ class Order(models.Model):
     wallet_amount = models.DecimalField(max_digits=10, decimal_places=2)
     order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=20, choices=payment_status_choices, default='unpaid',null=True,blank=True)
+    assigned_to = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True,related_name='assigned_orders',limit_choices_to={'role': 'delivery'})
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
