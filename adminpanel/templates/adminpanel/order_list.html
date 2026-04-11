@@ -103,7 +103,7 @@
                 <p><strong>Email:</strong> {{ order.user.email_id }}</p>
                 <p><strong>Contact:</strong> {{ order.user.contact_no }}</p>
                 <p><strong>Society:</strong> {{ order.society|default:"-" }}</p>
-                <p><strong>Delivery Slot:</strong> {{ order.delivery_slot|default:"Not specified" }}</p>
+                <p><strong>Delivery Slot:</strong> {{order.delivery_date}} , {{ order.delivery_slot|default:"Not specified" }}</p>
                 <hr>
 
                 <!-- ADDRESS -->
