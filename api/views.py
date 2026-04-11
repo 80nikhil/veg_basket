@@ -501,8 +501,15 @@ class CancelOrderView(APIView):
             },status=status.HTTP_404_NOT_FOUND)   
 
 class MostlyOrderedProductsView(APIView):
-    def get(self,request):
-        order_products = OrderProduct.objects.values('product_id').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
+    def get(self,request,user_id):
+        order_products =  OrderProduct.objects.all()
+        try:
+            user_obj = User.objects.get(id=user_id)
+            if user_obj.city:
+                order_products =  order_products.filter(product__cities=user_obj.city)
+        except User.DoesNotExist:
+            pass
+        order_products = order_products.values('product_id').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
         product_ids = [op['product_id'] for op in order_products]
         products = Product.objects.filter(id__in=product_ids)
         serializer = ProductSerializer(products, many=True, context={'request': request})

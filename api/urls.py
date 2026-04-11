@@ -30,5 +30,5 @@ urlpatterns = [
     path('get_banners/',GetBanners.as_view(),name='get_banners'),
     path('cancel_order/<str:order_id>/',CancelOrderView.as_view(),name='cancel_order'),
     path('get_related_products/<int:product_id>/',GetRelatedProducts.as_view(),name='get_related_products'),
-    path('mostly_ordered_products/',MostlyOrderedProductsView.as_view(),name='mostly_ordered_products'),
+    path('mostly_ordered_products/<str:user_id>/',MostlyOrderedProductsView.as_view(),name='mostly_ordered_products'),
 ]
