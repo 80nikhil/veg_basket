@@ -263,7 +263,9 @@ class UserOrdersView(APIView):
                 'total_amount': str(o.total_amount),
                 'order_status': o.order_status,
                 'society_name': o.society.name if o.society else None,
-                'address': o.address,
+                'address': o.new_address.full_address,
+                'delivery_slot' : o.delivery_slot,
+                'delivery_date' : o.delivery_date,
             } for o in orders]
 
             return Response({'orders': data})
@@ -385,6 +387,8 @@ class ProfileView(APIView):
                 user_obj.username = request.data.get('username')
                 user_obj.email_id = request.data.get('email_id')
                 user_obj.contact_no = request.data.get('contact_no')
+                if request.data.get('block_flat'):
+                    user_obj.block_flat = request.data.get('block_flat')
                 if request.data.get('password'):
                     user_obj.password = request.data.get('password')
                 if request.data.get('society_id'):
@@ -485,7 +489,7 @@ class GetRelatedProducts(APIView):
 class CancelOrderView(APIView):
     def get(self,request,order_id):
         try:
-            order_obj = Order.objects.get(order_id=order_id)
+            order_obj = Order.objects.get(id=order_id)
             if order_obj.order_status == 'cancelled':
                 return JsonResponse({
                     "message": "Order is already cancelled"

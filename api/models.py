@@ -117,6 +117,7 @@ class Order(models.Model):
     assigned_to = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True,related_name='assigned_orders',limit_choices_to={'role': 'delivery'})
     assigned_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    block_flat = models.CharField(max_length=150, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
