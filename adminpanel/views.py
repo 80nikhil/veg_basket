@@ -438,7 +438,7 @@ class OrderListView(ListView):
     def get(self, request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            orders = Order.objects.all().order_by('-id')[:20]
+            orders = Order.objects.all().order_by('-id')
             delivery_boys = User.objects.filter(role='delivery')
             context = {"orders": orders,"delivery_boys": delivery_boys}
             return render(request, self.template_name, context)

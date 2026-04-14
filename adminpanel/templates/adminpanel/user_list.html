@@ -27,6 +27,7 @@
         <th>Email</th>
         <th>Contact</th>
         <th>Society</th>
+        <th>Block/Flat</th>
         <th>Wallet</th>
         <th>Role</th>
         <th>Joined</th>
@@ -42,6 +43,7 @@
         <td>{{ user.email_id }}</td>
         <td>{{ user.contact_no }}</td>
         <td>{{ user.society|default:"-" }}</td>
+        <td>{{ user.block_flat|default:"-" }}</td>
         <td id="walletAmount{{ user.id }}">₹ {{ user.wallet_amount }}</td>
         <td>
           {% if user.role == 'admin' %}
