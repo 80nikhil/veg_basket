@@ -210,7 +210,8 @@ class PlaceOrderView(APIView):
                 user.wallet_amount = user.wallet_amount - int(request.data.get('wallet_amount', 0))
             else:
                 request.data['wallet_amount'] = 0
-            user.save()        
+            user.save() 
+            admin_user = User.objects.filter(role='admin').first()       
             order = Order.objects.create(
                 order_id=order_id_str,
                 user=user,
@@ -219,7 +220,9 @@ class PlaceOrderView(APIView):
                 delivery_date=data['delivery_date'],
                 delivery_slot=data['delivery_slot'],
                 total_amount=data['order_value'],
-                wallet_amount=request.data['wallet_amount']
+                wallet_amount=request.data['wallet_amount'],
+                assigned_to=admin_user,
+                assigned_at=dt.now()
             )
 
             created_products = []
@@ -263,7 +266,7 @@ class UserOrdersView(APIView):
                 'total_amount': str(o.total_amount),
                 'order_status': o.order_status,
                 'society_name': o.society.name if o.society else None,
-                'address': o.new_address.full_address,
+                'address': o.address,
                 'delivery_slot' : o.delivery_slot,
                 'delivery_date' : o.delivery_date,
             } for o in orders]

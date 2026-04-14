@@ -26,6 +26,7 @@
                 <th>Total</th>
                 <th>Status</th>
                 <th>Payment</th>
+                <th>Assigned To</th>
                 <th>Created</th>
                 <th>Action</th>
             </tr>
@@ -40,29 +41,32 @@
                 <td>{{ order.society|default:"-" }}</td>
                 <td>₹ {{ order.total_amount }}</td>
 
-                <!-- STATUS BADGE -->
+                <!-- STATUS -->
                 <td>
                     <span class="badge 
                         {% if order.order_status == 'pending' %}bg-warning text-dark
                         {% elif order.order_status == 'confirmed' %}bg-primary
                         {% elif order.order_status == 'delivered' %}bg-success
                         {% elif order.order_status == 'cancelled' %}bg-danger
-                        {% endif %}
-                    ">
+                        {% endif %}">
                         {{ order.get_order_status_display }}
                     </span>
                 </td>
 
-                <!-- PAYMENT BADGE -->
+                <!-- PAYMENT -->
                 <td>
                     <span class="badge 
                         {% if order.payment_status == 'paid' %}bg-success
                         {% elif order.payment_status == 'failed' %}bg-danger
                         {% else %}bg-secondary
-                        {% endif %}
-                    ">
+                        {% endif %}">
                         {{ order.get_payment_status_display }}
                     </span>
+                </td>
+
+                <!-- ASSIGNED -->
+                <td>
+                    {{ order.assigned_to.username|default:"Admin" }}
                 </td>
 
                 <td>{{ order.created_at|date:"M d, Y" }}</td>
@@ -115,8 +119,6 @@
                     <p>{{ order.address|default:"No address available" }}</p>
                 {% endif %}
 
-                
-
                 <hr>
 
                 <!-- ORDER PRODUCTS -->
@@ -168,10 +170,25 @@
                     <option value="cancelled" {% if order.order_status == "cancelled" %}selected{% endif %}>Cancelled</option>
                 </select>
 
+                <hr>
+
+                <!-- ASSIGN DELIVERY -->
+                <h6 class="fw-bold">Assign Delivery</h6>
+                <select name="assigned_to" class="form-control">
+                    <option value="">-- Assign to Admin (Default) --</option>
+
+                    {% for boy in delivery_boys %}
+                        <option value="{{ boy.id }}"
+                            {% if order.assigned_to and order.assigned_to.id == boy.id %}selected{% endif %}>
+                            {{ boy.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+
             </div>
 
             <div class="modal-footer">
-                <button type="submit" class="btn btn-success">Update Status</button>
+                <button type="submit" class="btn btn-success">Update</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
 
@@ -189,14 +206,12 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     document.querySelectorAll(".total-price").forEach(function(el) {
-
         let qty = parseFloat(el.getAttribute("data-qty"));
         let price = parseFloat(el.getAttribute("data-price"));
-
         el.innerText = qty * price;
-
     });
 
+    $('#ordersTable').DataTable();
 });
 </script>
 

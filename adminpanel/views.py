@@ -350,7 +350,8 @@ class OrderListView(ListView):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
             orders = Order.objects.all().order_by('-id')[:20]
-            context = {"orders": orders}
+            delivery_boys = User.objects.filter(role='delivery')
+            context = {"orders": orders,"delivery_boys": delivery_boys}
             return render(request, self.template_name, context)
         except:
             return redirect('/login/')
@@ -358,10 +359,19 @@ class OrderListView(ListView):
 class OrderUpdateView(View):
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
+        order_status = request.POST.get('order_status')
+        assigned_to_id = request.POST.get('assigned_to')
 
-        order.order_status = request.POST.get('order_status')
+        if order_status:
+            order.order_status = order_status
+        if assigned_to_id:
+            order.assigned_to_id = assigned_to_id
+        else:
+            admin_user = User.objects.filter(role='admin').first()
+            order.assigned_to = admin_user
         order.save()
-        messages.success(request, "Order status updated ✏️")
+
+        messages.success(request, "Order updated successfully ✏️")
         return redirect('order_list')
 
 #================= User =========================#
