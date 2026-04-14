@@ -1,10 +1,7 @@
 {% extends "adminpanel/base.html" %}
 {% block content %}
 
-<!-- DATATABLE CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
     <h4 class="fw-bold">Orders</h4>
 </div>
 
@@ -16,7 +13,7 @@
 {% endif %}
 
 <div class="card p-3 table-responsive">
-    <table id="ordersTable" class="table table-hover align-middle">
+    <table id="ordersTable" class="table table-hover align-middle js-datatable">
         <thead class="table-light">
             <tr>
                 <th>S.No.</th>
@@ -196,22 +193,13 @@
     </div>
 </div>
 {% endfor %}
-
-
-<!-- DATATABLE JS -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     document.querySelectorAll(".total-price").forEach(function(el) {
         let qty = parseFloat(el.getAttribute("data-qty"));
         let price = parseFloat(el.getAttribute("data-price"));
         el.innerText = qty * price;
     });
-
-    $('#ordersTable').DataTable();
 });
 </script>
 

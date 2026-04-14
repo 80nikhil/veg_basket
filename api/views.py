@@ -4,10 +4,20 @@ from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import request, status
 from django.db.models import Sum
+from django.db.models.functions import Lower
 from .models import *
 from .serializers import *
 from datetime import datetime as dt
 import razorpay
+
+
+def sorted_products_queryset(queryset):
+    return queryset.filter(is_deleted=False).select_related('category', 'unit').prefetch_related('cities').order_by(
+        Lower('name'),
+        'price',
+        'quantity',
+        'id',
+    )
 
 class SocietyListView(APIView):
     def get(self, request):
@@ -78,7 +88,7 @@ class CategoryListView(APIView):
 
 class ProductListView2(APIView):
     def get(self, request):
-        products = Product.objects.filter(is_deleted=False)
+        products = sorted_products_queryset(Product.objects.all())
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
 
@@ -91,6 +101,7 @@ class ProductListView(APIView):
                 products = products.filter(cities=user.city)
         except User.DoesNotExist:
             pass
+        products = sorted_products_queryset(products)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
     
@@ -103,6 +114,7 @@ class ProductByCategoryView(APIView):
                 products = products.filter(cities=user.city)
         except User.DoesNotExist:
             pass
+        products = sorted_products_queryset(products)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
     
@@ -122,9 +134,27 @@ class FlashSaleListView(APIView):
     
 class ProductByCategoryView2(APIView):
     def get(self, request, category_id):
-        products = Product.objects.filter(category_id=category_id)
+        products = sorted_products_queryset(Product.objects.filter(category_id=category_id))
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})    
+
+class FavoriteProductsView(APIView):
+    def get(self, request, favorite_flag):
+        if favorite_flag not in [0, 1]:
+            return Response({'error': 'favorite_flag must be 0 for vegetable or 1 for fruit.'}, status=400)
+
+        products = Product.objects.filter(
+            favorite_type=favorite_flag,
+            is_in_stock=True
+        )
+
+        products = sorted_products_queryset(products)[:10]
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response({
+            'title': 'Favorite Vegetable' if favorite_flag == 0 else 'Favorite Fruit',
+            'favorite_flag': favorite_flag,
+            'products': serializer.data
+        })
     
 class FlashSaleListView2(APIView):
     def get(self, request):
@@ -478,7 +508,7 @@ class GetRelatedProducts(APIView):
     def get(self,request,product_id):
         try:
             product_obj = Product.objects.get(id=product_id)
-            related_products = Product.objects.filter(name__icontains=product_obj.name)
+            related_products = sorted_products_queryset(Product.objects.filter(name__icontains=product_obj.name))
             serializer = ProductSerializer(related_products, many=True, context={'request': request})
             return JsonResponse({
                 "message": "Related products retrieved successfully",
@@ -518,7 +548,7 @@ class MostlyOrderedProductsView(APIView):
             pass
         order_products = order_products.values('product_id').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
         product_ids = [op['product_id'] for op in order_products]
-        products = Product.objects.filter(id__in=product_ids)
+        products = sorted_products_queryset(Product.objects.filter(id__in=product_ids))
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return JsonResponse({
             "message": "Mostly ordered products retrieved successfully",

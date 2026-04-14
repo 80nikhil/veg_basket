@@ -37,11 +37,12 @@ class ProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name')
     unit = serializers.CharField(source='unit.name')
+    favorite_type_label = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'image','is_in_stock',
+            'id', 'name', 'description', 'image','is_in_stock', 'favorite_type', 'favorite_type_label',
             'category_name', 'price', 'quantity', 'unit', 'created_at'
         ]
 
@@ -50,6 +51,9 @@ class ProductSerializer(serializers.ModelSerializer):
         if obj.image:
             return request.build_absolute_uri(obj.image.url)
         return None
+
+    def get_favorite_type_label(self, obj):
+        return obj.get_favorite_type_display() if obj.favorite_type is not None else None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

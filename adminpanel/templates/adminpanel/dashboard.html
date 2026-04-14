@@ -1,8 +1,417 @@
 {% extends 'adminpanel/base.html' %}
 {% load static %}
+
 {% block extra_head %}
+<style>
+  .dashboard-shell {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .hero-panel {
+    background:
+      radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 36%),
+      linear-gradient(135deg, #2f7d32 0%, #74b816 45%, #f4b942 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 18px 45px rgba(54, 96, 34, 0.22);
+  }
+
+  .hero-title {
+    font-size: clamp(1.6rem, 2.5vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-subtitle {
+    max-width: 720px;
+    color: rgba(255, 255, 255, 0.88);
+    margin-bottom: 0;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .summary-card {
+    color: #fff;
+    border-radius: 20px;
+    padding: 1.2rem;
+    min-height: 152px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -20px -30px auto;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.13);
+  }
+
+  .summary-card h6,
+  .metric-card h6 {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.76rem;
+    opacity: 0.9;
+    margin-bottom: 0.6rem;
+  }
+
+  .summary-card h2,
+  .metric-card h3 {
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  .summary-card p,
+  .metric-card p {
+    margin-bottom: 0;
+    opacity: 0.92;
+  }
+
+  .bg-total { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+  .bg-today { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+  .bg-pending { background: linear-gradient(135deg, #d97706, #fbbf24); }
+  .bg-complete { background: linear-gradient(135deg, #7c3aed, #c084fc); }
+
+  .metric-card {
+    border-radius: 20px;
+    padding: 1.25rem;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    height: 100%;
+  }
+
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .chart-card,
+  .list-card {
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    padding: 1.25rem;
+    height: 100%;
+  }
+
+  .chart-wrap {
+    position: relative;
+    min-height: 360px;
+  }
+
+  .list-card table td,
+  .list-card table th {
+    vertical-align: middle;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .pill-confirmed { background: #dbeafe; color: #1d4ed8; }
+  .pill-cancelled { background: #fee2e2; color: #b91c1c; }
+
+  @media (max-width: 1199px) {
+    .summary-grid,
+    .metric-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .summary-grid,
+    .metric-strip {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-panel,
+    .chart-card,
+    .list-card,
+    .metric-card {
+      border-radius: 18px;
+    }
+
+    .chart-wrap {
+      min-height: 280px;
+    }
+  }
+</style>
 {% endblock %}
+
 {% block content %}
+<div class="dashboard-shell">
+  <section class="hero-panel">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-8">
+        <p class="mb-2 text-uppercase fw-semibold" style="letter-spacing: .12em;">Admin Dashboard</p>
+        <h1 class="hero-title">Business snapshot for {{ current_month }}</h1>
+        <p class="hero-subtitle">
+          Track daily orders, completed sales, customer growth, and month performance in one place.
+        </p>
+      </div>
+      <div class="col-lg-4">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="bg-white text-dark rounded-4 p-3 h-100">
+              <small class="text-uppercase text-muted d-block mb-1">Today Sales</small>
+              <div class="fs-4 fw-bold">Rs. {{ today_sales|floatformat:2 }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="bg-white text-dark rounded-4 p-3 h-100">
+              <small class="text-uppercase text-muted d-block mb-1">Month Sales</small>
+              <div class="fs-4 fw-bold">Rs. {{ monthly_sales|floatformat:2 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card bg-total">
+      <h6>Total Orders</h6>
+      <h2>{{ total_orders }}</h2>
+      <p>All orders placed so far in the system.</p>
+    </div>
+    <div class="summary-card bg-today">
+      <h6>Today Orders</h6>
+      <h2>{{ today_orders }}</h2>
+      <p>Orders created today.</p>
+    </div>
+    <div class="summary-card bg-pending">
+      <h6>Pending Orders</h6>
+      <h2>{{ pending_orders }}</h2>
+      <p>Still waiting for action.</p>
+    </div>
+    <div class="summary-card bg-complete">
+      <h6>Completed Orders</h6>
+      <h2>{{ completed_orders }}</h2>
+      <p>Successfully delivered orders.</p>
+    </div>
+  </section>
+
+  <section class="metric-strip">
+    <div class="metric-card">
+      <h6>Total Products</h6>
+      <h3>{{ total_products }}</h3>
+      <p class="text-muted">Active catalog products visible in admin.</p>
+    </div>
+    <div class="metric-card">
+      <h6>Total Customers</h6>
+      <h3>{{ total_users }}</h3>
+      <p class="text-muted">Registered app users with customer role.</p>
+    </div>
+    <div class="metric-card">
+      <h6>Delivery Boys</h6>
+      <h3>{{ total_delivery_boys }}</h3>
+      <p class="text-muted">Delivery accounts available for assignment.</p>
+    </div>
+    <div class="metric-card">
+      <h6>Average Order Value</h6>
+      <h3>Rs. {{ average_order_value|floatformat:2 }}</h3>
+      <p class="text-muted">Average order value for this month.</p>
+    </div>
+  </section>
+
+  <section class="row g-4">
+    <div class="col-xl-8">
+      <div class="chart-card">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <h5 class="mb-1">Monthly Sales Trend</h5>
+            <p class="text-muted mb-0">Delivered sales amount and order flow day by day.</p>
+          </div>
+          <span class="badge text-bg-light px-3 py-2">Month: {{ current_month }}</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="salesTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="chart-card h-100">
+        <h5 class="mb-3">Order Status Overview</h5>
+        <div class="chart-wrap">
+          <canvas id="orderStatusChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row g-4">
+    <div class="col-xl-7">
+      <div class="list-card">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <h5 class="mb-1">Top Selling Products</h5>
+            <p class="text-muted mb-0">Best movement during {{ current_month }}.</p>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Qty Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in top_products %}
+              <tr>
+                <td>{{ item.product__name }}</td>
+                <td>{{ item.total_qty }}</td>
+                <td>Rs. {{ item.total_sales|default:0|floatformat:2 }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">No sales data for this month yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="list-card">
+        <h5 class="mb-3">Quick Status Counts</h5>
+        <div class="d-grid gap-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="status-pill pill-confirmed">Confirmed</span>
+            <strong>{{ confirmed_orders }}</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="status-pill bg-success-subtle text-success-emphasis">Delivered</span>
+            <strong>{{ completed_orders }}</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="status-pill bg-warning-subtle text-warning-emphasis">Pending</span>
+            <strong>{{ pending_orders }}</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="status-pill pill-cancelled">Cancelled</span>
+            <strong>{{ cancelled_orders }}</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center border-top pt-3">
+            <span class="text-muted">Monthly Delivered Revenue</span>
+            <strong>Rs. {{ monthly_sales|floatformat:2 }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}
+
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ chart_labels|json_script:"chart-labels" }}
+{{ chart_values|json_script:"chart-values" }}
+{{ chart_counts|json_script:"chart-counts" }}
+<script>
+  const labels = JSON.parse(document.getElementById("chart-labels").textContent);
+  const salesValues = JSON.parse(document.getElementById("chart-values").textContent);
+  const orderCounts = JSON.parse(document.getElementById("chart-counts").textContent);
+
+  const salesCtx = document.getElementById("salesTrendChart");
+  if (salesCtx) {
+    new Chart(salesCtx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Delivered Sales (Rs.)",
+            data: salesValues,
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(34, 197, 94, 0.18)",
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3,
+            pointRadius: 3,
+            pointHoverRadius: 5
+          },
+          {
+            label: "Order Count",
+            data: orderCounts,
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.12)",
+            tension: 0.35,
+            borderWidth: 2,
+            yAxisID: "y1",
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { position: "top" }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => `Rs. ${value}`
+            }
+          },
+          y1: {
+            beginAtZero: true,
+            position: "right",
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+  }
+
+  const statusCtx = document.getElementById("orderStatusChart");
+  if (statusCtx) {
+    new Chart(statusCtx, {
+      type: "doughnut",
+      data: {
+        labels: ["Pending", "Confirmed", "Delivered", "Cancelled"],
+        datasets: [{
+          data: [
+            {{ pending_orders }},
+            {{ confirmed_orders }},
+            {{ completed_orders }},
+            {{ cancelled_orders }}
+          ],
+          backgroundColor: ["#f59e0b", "#3b82f6", "#22c55e", "#ef4444"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom"
+          }
+        },
+        cutout: "68%"
+      }
+    });
+  }
+</script>
 {% endblock %}

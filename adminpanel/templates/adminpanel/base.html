@@ -87,7 +87,12 @@
       top: 0;
       left: 0;
       padding-top: 70px;
+      padding-bottom: 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
       transition: 0.3s;
+      scrollbar-width: thin;
     }
 
     .sidebar a {
@@ -117,6 +122,7 @@
       margin-left: 240px;
       padding: 25px;
       transition: 0.3s;
+      min-width: 0;
     }
 
     .content.full {
@@ -144,8 +150,14 @@
 
     /* MOBILE */
     @media (max-width: 768px) {
+      .navbar-brand {
+        font-size: 1rem;
+      }
+
       .sidebar {
         left: -240px;
+        z-index: 1050;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
       }
 
       .sidebar.show {
@@ -154,6 +166,17 @@
 
       .content {
         margin-left: 0;
+        padding: 16px;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem;
+      }
+
+      .page-header .btn {
+        width: 100%;
       }
     }
   </style>
@@ -173,6 +196,13 @@
 
 
   <ul id="sidebar" class="sidebar list-unstyled">
+    {% if request.session.role == "delivery" %}
+
+    <li><a href="/delivery/dashboard/"><i class="fa fa-dashboard me-2"></i>My Dashboard</a></li>
+    <li><a href="/delivery/orders/"><i class="fa fa-truck me-2"></i>My Orders</a></li>
+    <li><a href="/delivery/history/"><i class="fa fa-check me-2"></i>Completed Orders</a></li>
+
+    {% else %}
 
     <!-- Dashboard -->
     <li>
@@ -199,6 +229,8 @@
     <li><a href="/cities/"><i class="fa fa-map me-2"></i>Cities</a></li>
     <li><a href="/banners/"><i class="fa fa-images me-2"></i>Banners</a></li>
     <li><a href="#"><i class="fa fa-chart-line me-2"></i>Reports</a></li>
+    {% endif %}
+    <li><a href="/logout/"><i class="fa fa-sign-out-alt me-2"></i>Logout</a></li>
   </ul>
 
   <!-- MAIN CONTENT -->
@@ -224,7 +256,12 @@
     }
 
     $(document).ready(function () {
-      $("table").DataTable({
+      $(".js-datatable").each(function () {
+        if ($.fn.DataTable.isDataTable(this)) {
+          return;
+        }
+
+        $(this).DataTable({
         paging: true,
         pageLength: 10,
         lengthChange: true,
@@ -234,6 +271,7 @@
         autoWidth: false,
         responsive: true,
         columnDefs: [{ orderable: false, targets: -1 }],
+        });
       });
     });
   </script>

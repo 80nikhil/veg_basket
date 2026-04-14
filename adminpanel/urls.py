@@ -73,4 +73,12 @@ urlpatterns = [
         path('restore-slot/', RestoreSlotView.as_view(), name='restore_slot'),
         path('create-slot/', CreateSlotView.as_view(), name='create_slot'),
         path('update-min-order/', UpdateMinOrderView.as_view(), name='update_min_order'),
+
+
+        path('delivery/dashboard/', DeliveryDashboardView.as_view(), name='delivery_dashboard'),
+        path('delivery/orders/', DeliveryOrdersView.as_view(), name='delivery_orders'),
+        path('delivery/history/', DeliveryHistoryView.as_view(), name='delivery_history'),
+
+        path('delivery/confirm/<int:pk>/', ConfirmOrderView.as_view(), name='confirm_order'),
+        path('delivery/deliver/<int:pk>/', DeliverOrderView.as_view(), name='deliver_order'),
 ]

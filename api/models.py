@@ -68,6 +68,11 @@ class Unit(models.Model):
         return self.name
     
 class Product(models.Model):
+    FAVORITE_TYPE_CHOICES = [
+        (0, 'Favorite Vegetable'),
+        (1, 'Favorite Fruit'),
+    ]
+
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -78,6 +83,7 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     cities = models.ManyToManyField(City, blank=True)
     is_in_stock = models.BooleanField(default=True)
+    favorite_type = models.PositiveSmallIntegerField(null=True, blank=True, choices=FAVORITE_TYPE_CHOICES)
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):

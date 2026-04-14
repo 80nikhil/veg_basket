@@ -9,6 +9,11 @@ from decimal import Decimal
 from django.shortcuts import get_object_or_404, redirect
 from .utils.firebase import send_firebase_notification
 from django.utils.dateparse import parse_date
+from django.utils import timezone
+from django.db.models.functions import Lower
+from django.db.models import Sum
+from django.db.models import F
+from datetime import timedelta
 
 class TermsAndPolicyViewset(View):
     get_template = 'terms_and_conditions.html'
@@ -46,10 +51,12 @@ class LoginViewset(View):
             request.session['user_id'] = user_obj.id
             request.session['username'] = user_obj.username
             request.session['role'] = user_obj.role
-            if user_obj.role == 'admin':
-               return redirect('dashboard')
+            if user_obj.role == 'customer':
+               return redirect('/')
+            elif user_obj.role == 'delivery':
+                return redirect('delivery_dashboard')
             else:
-                return redirect('/')
+                return redirect('dashboard')
         except User.DoesNotExist:
             messages.error(request, "Invalid email or password")
             return render(request, self.template_name)
@@ -97,8 +104,85 @@ class AdminDashboard(View):
 
     def get(self, request):
         try:
-            User.objects.get(id=request.session.get('user_id'))
-            return render(request, self.get_template)
+            user = User.objects.get(id=request.session.get('user_id'))
+            if user.role != 'admin':
+                return redirect('/')
+
+            today = timezone.localdate()
+            month_start = today.replace(day=1)
+            next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+            orders = Order.objects.all()
+            month_orders = orders.filter(created_at__date__gte=month_start, created_at__date__lt=next_month)
+
+            total_orders = orders.count()
+            today_orders = orders.filter(created_at__date=today).count()
+            pending_orders = orders.filter(order_status='pending').count()
+            confirmed_orders = orders.filter(order_status='confirmed').count()
+            completed_orders = orders.filter(order_status='delivered').count()
+            cancelled_orders = orders.filter(order_status='cancelled').count()
+
+            total_products = Product.objects.filter(is_deleted=False).count()
+            total_users = User.objects.filter(role='customer').count()
+            total_delivery_boys = User.objects.filter(role='delivery').count()
+
+            today_sales = orders.filter(
+                created_at__date=today,
+                order_status='delivered'
+            ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+
+            monthly_sales = month_orders.filter(
+                order_status='delivered'
+            ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+
+            average_order_value = month_orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+            average_order_value = average_order_value / month_orders.count() if month_orders.exists() else Decimal('0.00')
+
+            chart_labels = []
+            chart_values = []
+            chart_counts = []
+
+            for day in range(1, today.day + 1):
+                current_date = month_start.replace(day=day)
+                daily_orders = month_orders.filter(created_at__date=current_date)
+                delivered_total = daily_orders.filter(order_status='delivered').aggregate(
+                    total=Sum('total_amount')
+                )['total'] or Decimal('0.00')
+
+                chart_labels.append(current_date.strftime("%d %b"))
+                chart_values.append(float(delivered_total))
+                chart_counts.append(daily_orders.count())
+
+            top_products = OrderProduct.objects.filter(
+                order__created_at__date__gte=month_start,
+                order__created_at__date__lt=next_month
+            ).values(
+                'product__name'
+            ).annotate(
+                total_qty=Sum('quantity'),
+                total_sales=Sum(F('price') * F('quantity'))
+            ).order_by('-total_qty')[:5]
+
+            context = {
+                'today_orders': today_orders,
+                'pending_orders': pending_orders,
+                'confirmed_orders': confirmed_orders,
+                'completed_orders': completed_orders,
+                'cancelled_orders': cancelled_orders,
+                'total_orders': total_orders,
+                'total_products': total_products,
+                'total_users': total_users,
+                'total_delivery_boys': total_delivery_boys,
+                'today_sales': today_sales,
+                'monthly_sales': monthly_sales,
+                'average_order_value': average_order_value,
+                'chart_labels': chart_labels,
+                'chart_values': chart_values,
+                'chart_counts': chart_counts,
+                'top_products': top_products,
+                'current_month': today.strftime("%B %Y"),
+            }
+            return render(request, self.get_template, context)
         except:
             return redirect('/login/')
 
@@ -156,12 +240,15 @@ class CategoryDeleteView(View):
 # ================= PRODUCT =================
 
 class ProductListView(View):
-    template_name = 'adminpanel/product_list.html'
+    template_name = 'adminpanel/product_list_responsive.html'
     def get(self, request, **kwargs):
         try:
             User.objects.get(id=request.session.get('user_id'))
             context = {}
-            context['products'] = Product.objects.filter()
+            context['products'] = Product.objects.filter(is_deleted=False).prefetch_related('cities').select_related(
+                'category',
+                'unit'
+            ).order_by(Lower('name'), 'price', 'quantity', 'id')
             context['categories'] = Category.objects.filter()
             context['units'] = Unit.objects.all().order_by('-id')
             context['cities'] = City.objects.all().order_by('-id')
@@ -180,7 +267,8 @@ class ProductCreateView(View):
             price=request.POST.get('price'),
             quantity=request.POST.get('quantity'),
             unit_id=request.POST.get('unit'),
-            is_in_stock=True if request.POST.get('is_in_stock') else False
+            is_in_stock=True if request.POST.get('is_in_stock') else False,
+            favorite_type=request.POST.get('favorite_type') if request.POST.get('favorite_type') != '' else None
         )
         city_ids = request.POST.getlist('cities')
         product.cities.set(city_ids)
@@ -202,6 +290,7 @@ class ProductUpdateView(View):
         if request.FILES.get('image'):
             product.image = request.FILES.get('image')
         product.is_in_stock = True if request.POST.get('is_in_stock') else False
+        product.favorite_type = request.POST.get('favorite_type') if request.POST.get('favorite_type') != '' else None
         product.save()
         city_ids = request.POST.getlist('cities')
         product.cities.set(city_ids)
@@ -366,7 +455,7 @@ class OrderUpdateView(View):
             order.order_status = order_status
         if assigned_to_id:
             order.assigned_to_id = assigned_to_id
-        else:
+        elif order.assigned_to is None:
             admin_user = User.objects.filter(role='admin').first()
             order.assigned_to = admin_user
         order.save()
@@ -616,3 +705,114 @@ class UpdateMinOrderView(View):
             obj = Settings.objects.create(key="min_order",value=val)
         return redirect("/slot-management/")                    
 
+
+#-------Delievery boy dashboard -----------------------
+
+class DeliverySessionMixin:
+    def get_delivery_user(self, request):
+        user_id = request.session.get('user_id')
+        role = request.session.get('role')
+
+        if not user_id or role != 'delivery':
+            return None
+
+        try:
+            return User.objects.get(id=user_id, role='delivery')
+        except User.DoesNotExist:
+            return None
+
+    def redirect_if_invalid(self, request):
+        if request.session.get('user_id'):
+            messages.error(request, "You are not allowed to access the delivery panel.")
+            return redirect('/')
+        return redirect('/login/')
+
+class DeliveryDashboardView(DeliverySessionMixin, View):
+    def get(self, request):
+        user = self.get_delivery_user(request)
+        if not user:
+            return self.redirect_if_invalid(request)
+
+        total_orders = Order.objects.filter(assigned_to=user).count()
+        pending_orders = Order.objects.filter(
+            assigned_to=user,
+            order_status='confirmed'
+        ).count()
+
+        delivered_orders = Order.objects.filter(
+            assigned_to=user,
+            order_status='delivered'
+        ).count()
+
+        return render(request, "delivery/dashboard.html", {
+            "total_orders": total_orders,
+            "pending_orders": pending_orders,
+            "delivered_orders": delivered_orders,
+        })
+    
+class DeliveryOrdersView(DeliverySessionMixin, View):
+    def get(self, request):
+        user = self.get_delivery_user(request)
+        if not user:
+            return self.redirect_if_invalid(request)
+
+        orders = Order.objects.filter(
+            assigned_to=user
+        ).exclude(order_status='delivered').order_by('-created_at')
+
+        return render(request, "delivery/orders.html", {
+            "orders": orders
+        })
+
+class DeliveryHistoryView(DeliverySessionMixin, View):
+    def get(self, request):
+        user = self.get_delivery_user(request)
+        if not user:
+            return self.redirect_if_invalid(request)
+
+        orders = Order.objects.filter(
+            assigned_to=user,
+            order_status='delivered'
+        ).order_by('-created_at')
+
+        return render(request, "delivery/history.html", {
+            "orders": orders
+        })
+
+class ConfirmOrderView(DeliverySessionMixin, View):
+    def post(self, request, pk):
+        user = self.get_delivery_user(request)
+        if not user:
+            return self.redirect_if_invalid(request)
+
+        order = get_object_or_404(Order, pk=pk, assigned_to=user)
+
+        if order.order_status != "pending":
+            messages.error(request, "Only pending orders can be confirmed.")
+            return redirect("delivery_orders")
+
+        order.order_status = "confirmed"
+        order.assigned_at = timezone.now()
+        order.save()
+
+        messages.success(request, "Order confirmed ✅")
+        return redirect("delivery_orders")    
+            
+class DeliverOrderView(DeliverySessionMixin, View):
+    def post(self, request, pk):
+        user = self.get_delivery_user(request)
+        if not user:
+            return self.redirect_if_invalid(request)
+
+        order = get_object_or_404(Order, pk=pk, assigned_to=user)
+
+        if order.order_status != "confirmed":
+            messages.error(request, "Only confirmed orders can be marked as delivered.")
+            return redirect("delivery_orders")
+
+        order.order_status = "delivered"
+        order.delivered_at = timezone.now()
+        order.save()
+
+        messages.success(request, "Order delivered 🚚")
+        return redirect("delivery_orders")

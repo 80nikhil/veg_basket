@@ -1,0 +1,327 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0">Products</h4>
+  <button class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#addProductModal">
+    <i class="fa fa-plus"></i> Add Product
+  </button>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle js-datatable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Image</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Qty</th>
+          <th>Unit</th>
+          <th>Cities</th>
+          <th>Favorites</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for prod in products %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>
+            {% if prod.image %}
+              <img src="{{ prod.image.url }}" width="50" class="rounded" alt="{{ prod.name }}">
+            {% endif %}
+          </td>
+          <td>{{ prod.name }}</td>
+          <td>{{ prod.category.name }}</td>
+          <td>Rs. {{ prod.price }}</td>
+          <td>{{ prod.quantity }}</td>
+          <td>{{ prod.unit.name }}</td>
+          <td>
+            {% for city in prod.cities.all %}
+              <span class="badge bg-success">{{ city.name }}</span>
+            {% empty %}
+              <span class="text-muted">No City</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if prod.favorite_type == 0 %}
+              <span class="badge bg-success-subtle text-success-emphasis">Vegetable</span>
+            {% elif prod.favorite_type == 1 %}
+              <span class="badge bg-warning-subtle text-warning-emphasis">Fruit</span>
+            {% else %}
+              <span class="badge bg-secondary">None</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if prod.is_in_stock %}
+              <span class="badge bg-success">In Stock</span>
+            {% else %}
+              <span class="badge bg-danger">Out of Stock</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-sm btn-outline-success"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editProduct{{ prod.id }}">
+                <i class="fa fa-edit"></i>
+              </button>
+              <form method="post" action="{% url 'product_delete' prod.id %}" class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center text-muted">No products found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% for prod in products %}
+<div class="modal fade" id="editProduct{{ prod.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
+    <form method="post"
+          enctype="multipart/form-data"
+          action="{% url 'product_update' prod.id %}"
+          class="modal-content">
+      {% csrf_token %}
+
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">Edit Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control" required>
+              {% for c in categories %}
+              <option value="{{ c.id }}" {% if c.id == prod.category.id %}selected{% endif %}>
+                {{ c.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Unit</label>
+            <select name="unit" class="form-control" required>
+              {% for u in units %}
+              <option value="{{ u.id }}" {% if u.id == prod.unit.id %}selected{% endif %}>
+                {{ u.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Available Cities</label>
+          <div class="row g-2">
+            {% for city in cities %}
+            <div class="col-sm-6 col-lg-4">
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="cities"
+                       value="{{ city.id }}"
+                       {% if city in prod.cities.all %}checked{% endif %}>
+                <label class="form-check-label">{{ city.name }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="is_in_stock"
+                     value="true"
+                     {% if prod.is_in_stock %}checked{% endif %}>
+              <label class="form-check-label">In Stock</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Favorite Section</label>
+            <select name="favorite_type" class="form-control">
+              <option value="">None</option>
+              <option value="0" {% if prod.favorite_type == 0 %}selected{% endif %}>Favorite Vegetable</option>
+              <option value="1" {% if prod.favorite_type == 1 %}selected{% endif %}>Favorite Fruit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Price</label>
+            <input type="number"
+                   step="0.01"
+                   name="price"
+                   value="{{ prod.price }}"
+                   class="form-control"
+                   required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Quantity</label>
+            <input type="number"
+                   name="quantity"
+                   value="{{ prod.quantity }}"
+                   class="form-control"
+                   required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Product Name</label>
+          <input type="text"
+                 name="name"
+                 value="{{ prod.name }}"
+                 class="form-control"
+                 required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3">{{ prod.description }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Product Image</label>
+          <input type="file" name="image" class="form-control">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Update</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="addProductModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
+    <form method="post"
+          enctype="multipart/form-data"
+          action="{% url 'product_create' %}"
+          class="modal-content">
+      {% csrf_token %}
+
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">Add Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control" required>
+              {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Unit</label>
+            <select name="unit" class="form-control" required>
+              {% for u in units %}
+              <option value="{{ u.id }}">{{ u.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Available Cities</label>
+          <div class="row g-2">
+            {% for city in cities %}
+            <div class="col-sm-6 col-lg-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="cities" value="{{ city.id }}">
+                <label class="form-check-label">{{ city.name }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_in_stock" value="true" checked>
+              <label class="form-check-label">In Stock</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Favorite Section</label>
+            <select name="favorite_type" class="form-control">
+              <option value="">None</option>
+              <option value="0">Favorite Vegetable</option>
+              <option value="1">Favorite Fruit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Price</label>
+            <input type="number" step="0.01" name="price" class="form-control" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Quantity</label>
+            <input type="number" name="quantity" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Product Name</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Product Image</label>
+          <input type="file" name="image" class="form-control">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Add Product</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
