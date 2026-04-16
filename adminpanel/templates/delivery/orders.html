@@ -18,7 +18,9 @@
             <tr>
                 <th>Order ID</th>
                 <th>User</th>
-                <th>Total</th>
+                <th>Delievery Date</th>
+                <th>Delievery Slot</th>
+                 <th>Delievery Address</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -29,8 +31,9 @@
             <tr>
                 <td>{{ order.order_id }}</td>
                 <td>{{ order.user.username }}</td>
-                <td>₹ {{ order.total_amount }}</td>
-
+                <td>{{ order.delivery_date }}</td>
+                <td>{{ order.delivery_slot }}</td>
+                <td>{{ order.address }}</td>
                 <td>
                     <span class="badge bg-warning">
                         {{ order.get_order_status_display }}
