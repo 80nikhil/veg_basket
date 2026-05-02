@@ -377,18 +377,17 @@ class ProductDeleteView(View):
 #================= Society =========================#
 
 class SocietyListView(ListView):
-    model = Society
     template_name = 'adminpanel/society_list.html'
-    context_object_name = 'societies'
 
-    def get_queryset(self):
+    def get(self,request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            queryset = Society.objects.select_related('city').all()
-            city_id = self.request.GET.get('city_id')
-            if city_id:
-                queryset = queryset.filter(city_id=city_id)
-            return queryset.order_by('name')
+            societies = Society.objects.all()
+            cities = City.objects.all()  
+            return render(request, self.template_name, {
+                'societies': societies,
+                'cities': cities
+            })
         except: 
             return redirect('/login/')
         
@@ -396,6 +395,7 @@ class SocietyCreateView(View):
     def post(self, request):
         Society.objects.create(
             name=request.POST.get('name'),
+            city_id=request.POST.get('city')   # 🔥 THIS LINE
         )
         messages.success(request, "Society added successfully ✅")
         return redirect('society_list')
@@ -405,7 +405,9 @@ class SocietyUpdateView(View):
         society = get_object_or_404(Society, pk=pk)
 
         society.name = request.POST.get('name')
+        society.city_id = request.POST.get('city')   # 🔥 THIS LINE
         society.save()
+
         messages.success(request, "Society updated ✏️")
         return redirect('society_list')
     
