@@ -1,7 +1,11 @@
 from django.contrib import admin
 from . models import *
 
-admin.site.register(User)
+@admin.register(User)
+class MyModelAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email_id', 'password','role')
+    list_filter = ('role','society','city')
+    search_fields = ('contact_no','username','role')
 admin.site.register(Society)
 admin.site.register(Category)
 admin.site.register(Unit)

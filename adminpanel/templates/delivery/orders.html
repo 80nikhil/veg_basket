@@ -1,4 +1,5 @@
 {% extends "adminpanel/base.html" %}
+{% load static %}
 {% block content %}
 
 <div class="card p-3">
@@ -13,64 +14,180 @@
     {% endif %}
 
     <div class="table-responsive">
-    <table class="table table-hover align-middle js-datatable">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>User</th>
-                <th>Delievery Date</th>
-                <th>Delievery Slot</th>
-                 <th>Delievery Address</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
+        <table class="table table-hover align-middle js-datatable">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Delivery Date</th>
+                    <th>Slot</th>
+                    <th>Address</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
 
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.order_id }}</td>
-                <td>{{ order.user.username }}</td>
-                <td>{{ order.delivery_date }}</td>
-                <td>{{ order.delivery_slot }}</td>
-                <td>{{ order.address }}</td>
-                <td>
-                    <span class="badge bg-warning">
-                        {{ order.get_order_status_display }}
-                    </span>
-                </td>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.order_id }}</td>
+                    <td>{{ order.user.username }}</td>
+                    <td>{{ order.delivery_date }}</td>
+                    <td>{{ order.delivery_slot }}</td>
+                    <td>{{ order.address }}</td>
 
-                <td>
+                    <td>
+                        <span class="badge bg-warning">
+                            {{ order.get_order_status_display }}
+                        </span>
+                    </td>
 
-                    {% if order.order_status == "pending" %}
-                    <form method="post" action="/delivery/confirm/{{ order.id }}/">
-                        {% csrf_token %}
-                        <button class="btn btn-sm btn-primary">
-                            Accept Order
+                    <td>
+
+                        <!-- VIEW BUTTON -->
+                        <button class="btn btn-sm btn-info mb-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#orderModal{{ order.id }}">
+                            View
                         </button>
-                    </form>
-                    {% endif %}
 
-                    {% if order.order_status == "confirmed" %}
-                    <form method="post" action="/delivery/deliver/{{ order.id }}/">
-                        {% csrf_token %}
-                        <button class="btn btn-sm btn-success">
-                            Mark Delivered
-                        </button>
-                    </form>
-                    {% endif %}
+                        <br>
 
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center text-muted py-4">No active orders assigned.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        <!-- ACCEPT -->
+                        {% if order.order_status == "pending" %}
+                        <form method="post" action="/delivery/confirm/{{ order.id }}/" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-primary mt-1">
+                                Accept
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <!-- DELIVER -->
+                        {% if order.order_status == "confirmed" %}
+                        <form method="post" action="/delivery/deliver/{{ order.id }}/" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-success mt-1">
+                                Deliver
+                            </button>
+                        </form>
+                        {% endif %}
+
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        No active orders assigned.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
 </div>
+
+<!-- ================= MODALS ================= -->
+{% for order in orders %}
+<div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Order Details - {{ order.order_id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- CUSTOMER -->
+                <h6 class="fw-bold">Customer</h6>
+                <p><strong>Name:</strong> {{ order.user.username }}</p>
+
+                <hr>
+
+                <!-- DELIVERY -->
+                <h6 class="fw-bold">Delivery Info</h6>
+                <p><strong>Date:</strong> {{ order.delivery_date }}</p>
+                <p><strong>Slot:</strong> {{ order.delivery_slot }}</p>
+
+                <hr>
+
+                <!-- ADDRESS -->
+                <h6 class="fw-bold">Address</h6>
+                {% if order.new_address %}
+                    <p>{{ order.new_address.full_address }}</p>
+                    <p><strong>Instruction:</strong> {{ order.new_address.instruction }}</p>
+                {% else %}
+                    <p>{{ order.address }}</p>
+                {% endif %}
+
+                <hr>
+
+                <!-- PRODUCTS -->
+                <h6 class="fw-bold">Products</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Available Qty</th>
+                                <th>Order Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.order_products.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.quantity }} {{ item.product.unit.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹ {{ item.price }}</td>
+                                <td>
+                                    ₹ <span class="total-price"
+                                        data-qty="{{ item.quantity }}"
+                                        data-price="{{ item.price }}">
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    No products found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr>
+
+                <!-- SUMMARY -->
+                <h6 class="fw-bold">Summary</h6>
+                <p><strong>Total Amount:</strong> ₹ {{ order.total_amount }}</p>
+                <p><strong>Wallet Used:</strong> ₹ {{ order.wallet_amount }}</p>
+                <p><strong>Payment Status:</strong> {{ order.get_payment_status_display }}</p>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- TOTAL CALCULATION SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".total-price").forEach(function(el) {
+        let qty = parseFloat(el.getAttribute("data-qty")) || 0;
+        let price = parseFloat(el.getAttribute("data-price")) || 0;
+        el.innerText = (qty * price).toFixed(2);
+    });
+});
+</script>
 
 {% endblock %}

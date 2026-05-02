@@ -9,6 +9,11 @@ from .models import *
 from .serializers import *
 from datetime import datetime as dt
 import razorpay
+from .referrals import (
+    build_referral_invite_link,
+    build_referral_share_message,
+    create_referral_for_user,
+)
 
 
 def sorted_products_queryset(queryset):
@@ -43,6 +48,11 @@ class RegisterView(APIView):
 
         if serializer.is_valid():
             user = serializer.save()
+            referrer_code = request.data.get('referrer_code') or request.data.get('referral_code')
+            if referrer_code:
+                referrer = User.objects.filter(referal_code=referrer_code).exclude(id=user.id).first()
+                if referrer:
+                    create_referral_for_user(user, referrer)
             return Response({
                 'message': 'Registration successful.',
                 'user_id': user.id,
@@ -154,6 +164,41 @@ class FavoriteProductsView(APIView):
             'title': 'Favorite Vegetable' if favorite_flag == 0 else 'Favorite Fruit',
             'favorite_flag': favorite_flag,
             'products': serializer.data
+        })
+
+class ReferralInfoView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+
+        referral_qs = Referral.objects.filter(referrer=user)
+        successful_qs = referral_qs.filter(status='credited')
+        total_cashback = successful_qs.aggregate(total=Sum('reward_referrer'))['total'] or 0
+
+        return Response({
+            'user_id': user.id,
+            'referral_code': user.referal_code,
+            'invite_link': build_referral_invite_link(user.referal_code),
+            'share_message': build_referral_share_message(user),
+            'total_referrals': referral_qs.count(),
+            'successful_referrals': successful_qs.count(),
+            'total_cashback_earned': str(total_cashback),
+            'wallet_amount': str(user.wallet_amount),
+        })
+
+class ReferralHistoryView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+
+        referrals = Referral.objects.filter(referrer=user).select_related('referred_user', 'order').order_by('-created_at')
+        serializer = ReferralSerializer(referrals, many=True)
+        return Response({
+            'referrals': serializer.data
         })
     
 class FlashSaleListView2(APIView):

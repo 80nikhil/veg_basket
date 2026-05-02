@@ -30,19 +30,41 @@
     margin-bottom: 0;
   }
 
-  .summary-grid {
+  .summary-grid,
+  .metric-strip {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
 
+  .summary-link,
+  .metric-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .summary-card,
+  .metric-card,
+  .chart-card,
+  .list-card,
+  .drill-card {
+    border-radius: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .summary-link:hover .summary-card,
+  .metric-link:hover .metric-card,
+  .drill-card .list-group-item-action:hover {
+    transform: translateY(-2px);
+  }
+
   .summary-card {
     color: #fff;
-    border-radius: 20px;
     padding: 1.2rem;
     min-height: 152px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   }
 
   .summary-card::after {
@@ -81,23 +103,10 @@
   .bg-pending { background: linear-gradient(135deg, #d97706, #fbbf24); }
   .bg-complete { background: linear-gradient(135deg, #7c3aed, #c084fc); }
 
-  .metric-card {
-    border-radius: 20px;
-    padding: 1.25rem;
-    background: #fff;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-    height: 100%;
-  }
-
-  .metric-strip {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
+  .metric-card,
   .chart-card,
-  .list-card {
-    border-radius: 24px;
+  .list-card,
+  .drill-card {
     background: #fff;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
     padding: 1.25rem;
@@ -106,12 +115,7 @@
 
   .chart-wrap {
     position: relative;
-    min-height: 360px;
-  }
-
-  .list-card table td,
-  .list-card table th {
-    vertical-align: middle;
+    min-height: 340px;
   }
 
   .status-pill {
@@ -125,6 +129,23 @@
 
   .pill-confirmed { background: #dbeafe; color: #1d4ed8; }
   .pill-cancelled { background: #fee2e2; color: #b91c1c; }
+
+  .drill-card .list-group-item {
+    border: 1px solid #eef2f7;
+    border-radius: 14px;
+    margin-bottom: 0.75rem;
+  }
+
+  .drill-card .list-group-item.active {
+    background: rgba(158, 193, 77, 0.18);
+    color: #1f2937;
+    border-color: #9ec14d;
+  }
+
+  .drill-meta {
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
 
   @media (max-width: 1199px) {
     .summary-grid,
@@ -142,7 +163,8 @@
     .hero-panel,
     .chart-card,
     .list-card,
-    .metric-card {
+    .metric-card,
+    .drill-card {
       border-radius: 18px;
     }
 
@@ -161,7 +183,7 @@
         <p class="mb-2 text-uppercase fw-semibold" style="letter-spacing: .12em;">Admin Dashboard</p>
         <h1 class="hero-title">Business snapshot for {{ current_month }}</h1>
         <p class="hero-subtitle">
-          Track daily orders, completed sales, customer growth, and month performance in one place.
+          Track orders, referrals, society activity, and customer growth from one place.
         </p>
       </div>
       <div class="col-lg-4">
@@ -184,49 +206,65 @@
   </section>
 
   <section class="summary-grid">
-    <div class="summary-card bg-total">
-      <h6>Total Orders</h6>
-      <h2>{{ total_orders }}</h2>
-      <p>All orders placed so far in the system.</p>
-    </div>
-    <div class="summary-card bg-today">
-      <h6>Today Orders</h6>
-      <h2>{{ today_orders }}</h2>
-      <p>Orders created today.</p>
-    </div>
-    <div class="summary-card bg-pending">
-      <h6>Pending Orders</h6>
-      <h2>{{ pending_orders }}</h2>
-      <p>Still waiting for action.</p>
-    </div>
-    <div class="summary-card bg-complete">
-      <h6>Completed Orders</h6>
-      <h2>{{ completed_orders }}</h2>
-      <p>Successfully delivered orders.</p>
-    </div>
+    <a class="summary-link" href="/orders/">
+      <div class="summary-card bg-total">
+        <h6>Total Orders</h6>
+        <h2>{{ total_orders }}</h2>
+        <p>Open full order list.</p>
+      </div>
+    </a>
+    <a class="summary-link" href="/orders/?date=today">
+      <div class="summary-card bg-today">
+        <h6>Today Orders</h6>
+        <h2>{{ today_orders }}</h2>
+        <p>View today’s orders only.</p>
+      </div>
+    </a>
+    <a class="summary-link" href="/orders/?status=pending">
+      <div class="summary-card bg-pending">
+        <h6>Pending Orders</h6>
+        <h2>{{ pending_orders }}</h2>
+        <p>Orders waiting for action.</p>
+      </div>
+    </a>
+    <a class="summary-link" href="/orders/?status=delivered">
+      <div class="summary-card bg-complete">
+        <h6>Completed Orders</h6>
+        <h2>{{ completed_orders }}</h2>
+        <p>Delivered orders list.</p>
+      </div>
+    </a>
   </section>
 
   <section class="metric-strip">
-    <div class="metric-card">
-      <h6>Total Products</h6>
-      <h3>{{ total_products }}</h3>
-      <p class="text-muted">Active catalog products visible in admin.</p>
-    </div>
-    <div class="metric-card">
-      <h6>Total Customers</h6>
-      <h3>{{ total_users }}</h3>
-      <p class="text-muted">Registered app users with customer role.</p>
-    </div>
-    <div class="metric-card">
-      <h6>Delivery Boys</h6>
-      <h3>{{ total_delivery_boys }}</h3>
-      <p class="text-muted">Delivery accounts available for assignment.</p>
-    </div>
-    <div class="metric-card">
-      <h6>Average Order Value</h6>
-      <h3>Rs. {{ average_order_value|floatformat:2 }}</h3>
-      <p class="text-muted">Average order value for this month.</p>
-    </div>
+    <a class="metric-link" href="/products/">
+      <div class="metric-card">
+        <h6>Total Products</h6>
+        <h3>{{ total_products }}</h3>
+        <p class="text-muted">Active catalog products.</p>
+      </div>
+    </a>
+    <a class="metric-link" href="/users/?role=customer">
+      <div class="metric-card">
+        <h6>Total Customers</h6>
+        <h3>{{ total_users }}</h3>
+        <p class="text-muted">Registered mobile app users.</p>
+      </div>
+    </a>
+    <a class="metric-link" href="/users/?role=delivery">
+      <div class="metric-card">
+        <h6>Delivery Boys</h6>
+        <h3>{{ total_delivery_boys }}</h3>
+        <p class="text-muted">Delivery accounts available.</p>
+      </div>
+    </a>
+    <a class="metric-link" href="/referrals/">
+      <div class="metric-card">
+        <h6>Total Referrals</h6>
+        <h3>{{ total_referrals }}</h3>
+        <p class="text-muted">Pending: {{ pending_referrals }} | Credited: {{ credited_referrals }}</p>
+      </div>
+    </a>
   </section>
 
   <section class="row g-4">
@@ -263,6 +301,7 @@
             <h5 class="mb-1">Top Selling Products</h5>
             <p class="text-muted mb-0">Best movement during {{ current_month }}.</p>
           </div>
+          <a href="/products/" class="btn btn-sm btn-outline-success">Open Products</a>
         </div>
         <div class="table-responsive">
           <table class="table align-middle mb-0">
@@ -312,13 +351,130 @@
             <strong>{{ cancelled_orders }}</strong>
           </div>
           <div class="d-flex justify-content-between align-items-center border-top pt-3">
-            <span class="text-muted">Monthly Delivered Revenue</span>
-            <strong>Rs. {{ monthly_sales|floatformat:2 }}</strong>
+            <span class="text-muted">Referral Rewards Given</span>
+            <strong>Rs. {{ total_referral_rewards|floatformat:2 }}</strong>
           </div>
         </div>
       </div>
     </div>
   </section>
+
+  <section class="row g-4">
+    <div class="col-lg-4">
+      <div class="drill-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">1. Select City</h5>
+          <span class="badge text-bg-light">{{ cities|length }} cities</span>
+        </div>
+        <div class="list-group">
+          {% for city in cities %}
+          <a href="/dashboard/?city_id={{ city.id }}"
+             class="list-group-item list-group-item-action {% if selected_city and selected_city.id == city.id %}active{% endif %}">
+            <div class="fw-semibold">{{ city.name }}</div>
+            <div class="drill-meta">{{ city.society_count }} societies | {{ city.user_count }} users | {{ city.order_count }} orders</div>
+          </a>
+          {% empty %}
+          <div class="text-muted">No cities available.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="drill-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">2. Select Society</h5>
+          {% if selected_city %}
+          <span class="badge text-bg-light">{{ selected_city.name }}</span>
+          {% endif %}
+        </div>
+        <div class="list-group">
+          {% for society in societies %}
+          <a href="/dashboard/?city_id={{ selected_city.id }}&society_id={{ society.id }}"
+             class="list-group-item list-group-item-action {% if selected_society and selected_society.id == society.id %}active{% endif %}">
+            <div class="fw-semibold">{{ society.name }}</div>
+            <div class="drill-meta">{{ society.user_count }} users | {{ society.order_count }} orders</div>
+          </a>
+          {% empty %}
+          <div class="text-muted">Select a city to view societies.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="drill-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">3. Society Users</h5>
+          {% if selected_society %}
+          <span class="badge text-bg-light">{{ selected_society.name }}</span>
+          {% endif %}
+        </div>
+        <div class="list-group">
+          {% for user in dashboard_users %}
+          <a href="/dashboard/?city_id={{ selected_city.id }}&society_id={{ selected_society.id }}&user_id={{ user.id }}"
+             class="list-group-item list-group-item-action {% if selected_user and selected_user.id == user.id %}active{% endif %}">
+            <div class="fw-semibold">{{ user.username }}</div>
+            <div class="drill-meta">{{ user.contact_no }} | {{ user.block_flat|default:"No block/flat" }}</div>
+            <div class="drill-meta">Orders: {{ user.total_orders_count }} | Wallet: Rs. {{ user.wallet_amount|floatformat:2 }}</div>
+          </a>
+          {% empty %}
+          <div class="text-muted">Select a society to view users.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% if selected_user %}
+  <section class="row g-4">
+    <div class="col-xl-4">
+      <div class="list-card">
+        <h5 class="mb-3">Selected User</h5>
+        <p class="mb-1"><strong>{{ selected_user.username }}</strong></p>
+        <p class="mb-1 text-muted">{{ selected_user.contact_no }}</p>
+        <p class="mb-1 text-muted">{{ selected_user.email_id|default:"No email" }}</p>
+        <p class="mb-1 text-muted">{{ selected_user.block_flat|default:"No block/flat" }}</p>
+        <p class="mb-3 text-muted">Wallet: Rs. {{ selected_user.wallet_amount|floatformat:2 }}</p>
+        <a class="btn btn-outline-success btn-sm" href="/orders/?user_id={{ selected_user.id }}">View Orders</a>
+      </div>
+    </div>
+    <div class="col-xl-8">
+      <div class="list-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Recent Orders</h5>
+          <a class="btn btn-outline-success btn-sm" href="/users/?society_id={{ selected_society.id }}">Open Society Users</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in selected_user_orders %}
+              <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                <td>Rs. {{ order.total_amount|floatformat:2 }}</td>
+                <td>{{ order.get_order_status_display }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-4">No orders found for this user.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}
 

@@ -1,0 +1,111 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0">Refer & Earn Tracking</h4>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3 h-100">
+      <small class="text-muted text-uppercase">Total Referrals</small>
+      <h3 class="mt-2 mb-0">{{ total_referrals }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100">
+      <small class="text-muted text-uppercase">Pending Rewards</small>
+      <h3 class="mt-2 mb-0">{{ pending_referrals }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100">
+      <small class="text-muted text-uppercase">Credited Rewards</small>
+      <h3 class="mt-2 mb-0">{{ credited_referrals }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100">
+      <small class="text-muted text-uppercase">Cashback Given</small>
+      <h3 class="mt-2 mb-0">Rs. {{ total_cashback_given|floatformat:2 }}</h3>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4">
+  <h5 class="mb-3">Referral Settings</h5>
+  <form method="post" action="{% url 'referral_settings_update' %}">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Minimum Order Amount</label>
+        <input type="number" step="0.01" name="referral_min_order" value="{{ settings_data.min_order }}" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Referrer Reward</label>
+        <input type="number" step="0.01" name="referral_referrer_reward" value="{{ settings_data.referrer_reward }}" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Friend Reward</label>
+        <input type="number" step="0.01" name="referral_friend_reward" value="{{ settings_data.friend_reward }}" class="form-control" required>
+      </div>
+    </div>
+    <div class="mt-3">
+      <button class="btn btn-theme" type="submit">Save Settings</button>
+    </div>
+  </form>
+</div>
+
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle js-datatable">
+      <thead class="table-light">
+        <tr>
+          <th>Referrer</th>
+          <th>Friend</th>
+          <th>Order</th>
+          <th>Order Value</th>
+          <th>Referrer Reward</th>
+          <th>Friend Reward</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Credited</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for referral in referrals %}
+        <tr>
+          <td>{{ referral.referrer.username }}</td>
+          <td>
+            {{ referral.referred_user.username }}<br>
+            <small class="text-muted">{{ referral.referred_user.contact_no }}</small>
+          </td>
+          <td>{{ referral.order.order_id|default:"-" }}</td>
+          <td>Rs. {{ referral.order_value|floatformat:2 }}</td>
+          <td>Rs. {{ referral.reward_referrer|floatformat:2 }}</td>
+          <td>Rs. {{ referral.reward_friend|floatformat:2 }}</td>
+          <td>
+            <span class="badge {% if referral.status == 'credited' %}bg-success{% elif referral.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {{ referral.get_status_display }}
+            </span>
+          </td>
+          <td>{{ referral.created_at|date:"M d, Y h:i A" }}</td>
+          <td>{{ referral.credited_at|date:"M d, Y h:i A"|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-4">No referral records available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

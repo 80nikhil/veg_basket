@@ -19,7 +19,7 @@
 
 <!-- ================= USERS TABLE ================= -->
 <div class="card p-3 table-responsive">
-  <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle js-datatable">
     <thead>
       <tr>
         <th>S.No.</th>
@@ -48,6 +48,8 @@
         <td>
           {% if user.role == 'admin' %}
           <span class="badge bg-danger">Admin</span>
+          {% elif user.role == 'delivery' %}
+          <span class="badge bg-primary">Delivery</span>
           {% else %}
           <span class="badge bg-success">Customer</span>
           {% endif %}

@@ -10,11 +10,18 @@ class SocietySerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     city_name = serializers.CharField(source='city.name', read_only=True)
     society_name = serializers.CharField(source='society.name', read_only=True)
+    referrer_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'contact_no', 'email_id', 'referal_code', 'wallet_amount','role','society','city','block_flat','city_name','society_name']
-        read_only_fields = ['id', 'email_id', 'referal_code', 'wallet_amount','role','city_name','society_name']
+        fields = ['id', 'username', 'contact_no', 'email_id', 'referal_code', 'wallet_amount','role','society','city','block_flat','city_name','society_name', 'referrer_code']
+        read_only_fields = ['id', 'referal_code', 'wallet_amount','role','city_name','society_name']
+
+    def create(self, validated_data):
+        validated_data.pop('referrer_code', None)
+        validated_data.setdefault('password', '')
+        validated_data.setdefault('email_id', '')
+        return User.objects.create(**validated_data)
 
 
 class LoginSerializer(serializers.Serializer):
@@ -126,6 +133,28 @@ class WalletHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WalletHistory
         fields = '__all__'  
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referrer_name = serializers.CharField(source='referrer.username', read_only=True)
+    referred_name = serializers.CharField(source='referred_user.username', read_only=True)
+    referred_contact = serializers.CharField(source='referred_user.contact_no', read_only=True)
+    order_id = serializers.CharField(source='order.order_id', read_only=True)
+
+    class Meta:
+        model = Referral
+        fields = [
+            'id',
+            'referrer_name',
+            'referred_name',
+            'referred_contact',
+            'order_id',
+            'order_value',
+            'reward_referrer',
+            'reward_friend',
+            'status',
+            'created_at',
+            'credited_at',
+        ]
 
 class SlotMasterSerializer(serializers.ModelSerializer):
     class Meta:

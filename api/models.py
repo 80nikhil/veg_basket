@@ -1,5 +1,7 @@
 from decimal import Decimal
 from django.db import models
+import random
+import string
 
 class City(models.Model):
     name = models.CharField(max_length=150)
@@ -23,6 +25,7 @@ class User(models.Model):
     contact_no = models.CharField(max_length=15)
     password = models.CharField(max_length=255)
     referal_code = models.CharField(max_length=15, null=True, blank=True)
+    referred_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='referred_users')
     wallet_amount = models.DecimalField(max_digits=10,decimal_places=2,default=Decimal('0.00'))
     society = models.ForeignKey(Society,on_delete=models.SET_NULL,null=True,blank=True,related_name='users')
     city = models.ForeignKey(City,on_delete=models.SET_NULL,null=True,blank=True,related_name='user_city')
@@ -33,6 +36,18 @@ class User(models.Model):
 
     def __str__(self):
         return self.username
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.referal_code:
+            base = ''.join(ch for ch in self.username.upper() if ch.isalnum())[:5] or 'VEG'
+            suffix = ''.join(random.choices(string.digits, k=4))
+            code = f"{base}{self.id}{suffix}"[:15]
+            while User.objects.exclude(pk=self.pk).filter(referal_code=code).exists():
+                suffix = ''.join(random.choices(string.digits, k=4))
+                code = f"{base}{self.id}{suffix}"[:15]
+            User.objects.filter(pk=self.pk).update(referal_code=code)
+            self.referal_code = code
         
 class address(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="user_address")
@@ -138,6 +153,27 @@ class OrderProduct(models.Model):
     def __str__(self):
         return f"{self.product.name} x {self.quantity}" 
 
+class Referral(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('credited', 'Credited'),
+        ('invalid', 'Invalid'),
+    ]
+
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrals_made')
+    referred_user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referral_record')
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='referral_rewards')
+    order_value = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    reward_referrer = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    reward_friend = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    credited_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.referrer.username} -> {self.referred_user.username} ({self.status})"
+
+
 class Aids_banner(models.Model):
     image = models.ImageField(upload_to='banners/')
     created_at = models.DateTimeField(auto_now_add=True)        
@@ -156,7 +192,6 @@ class EliminatedSlot(models.Model):
 
 class Settings(models.Model):
     key = models.CharField(max_length=50, unique=True)
-    value = models.DecimalField(max_digits=10, decimal_places=2)    
+    value = models.DecimalField(max_digits=10, decimal_places=2)
 
-    
-    
+

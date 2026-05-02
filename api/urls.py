@@ -4,6 +4,8 @@ from .views import *
 urlpatterns = [
     path('user/register/', RegisterView.as_view(), name='user-register'),
     path('user/login/', LoginView.as_view(), name='user-login'),
+    path('user/referral-info/<int:user_id>/', ReferralInfoView.as_view(), name='user-referral-info'),
+    path('user/referral-history/<int:user_id>/', ReferralHistoryView.as_view(), name='user-referral-history'),
     path('user/societies/', SocietyListView.as_view(), name='get-all-societies'),
     path('product/categories/', CategoryListView.as_view(), name='get-categories'),
     path('product/products/', ProductListView2.as_view(), name='get-products'),

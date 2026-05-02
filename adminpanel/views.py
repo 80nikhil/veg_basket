@@ -13,7 +13,9 @@ from django.utils import timezone
 from django.db.models.functions import Lower
 from django.db.models import Sum
 from django.db.models import F
+from django.db.models import Count, Q
 from datetime import timedelta
+from api.referrals import get_referral_settings, process_referral_for_delivered_order
 
 class TermsAndPolicyViewset(View):
     get_template = 'terms_and_conditions.html'
@@ -111,6 +113,7 @@ class AdminDashboard(View):
             today = timezone.localdate()
             month_start = today.replace(day=1)
             next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+            referral_settings = get_referral_settings()
 
             orders = Order.objects.all()
             month_orders = orders.filter(created_at__date__gte=month_start, created_at__date__lt=next_month)
@@ -125,6 +128,7 @@ class AdminDashboard(View):
             total_products = Product.objects.filter(is_deleted=False).count()
             total_users = User.objects.filter(role='customer').count()
             total_delivery_boys = User.objects.filter(role='delivery').count()
+            total_societies = Society.objects.count()
 
             today_sales = orders.filter(
                 created_at__date=today,
@@ -163,6 +167,54 @@ class AdminDashboard(View):
                 total_sales=Sum(F('price') * F('quantity'))
             ).order_by('-total_qty')[:5]
 
+            referrals = Referral.objects.select_related('referrer', 'referred_user', 'order')
+            total_referrals = referrals.count()
+            pending_referrals = referrals.filter(status='pending').count()
+            credited_referrals = referrals.filter(status='credited').count()
+            credited_reward_totals = referrals.filter(status='credited').aggregate(
+                total_referrer=Sum('reward_referrer'),
+                total_friend=Sum('reward_friend'),
+            )
+            total_referral_rewards = (
+                (credited_reward_totals['total_referrer'] or Decimal('0.00')) +
+                (credited_reward_totals['total_friend'] or Decimal('0.00'))
+            )
+
+            selected_city_id = request.GET.get('city_id')
+            selected_society_id = request.GET.get('society_id')
+            selected_user_id = request.GET.get('user_id')
+
+            cities = City.objects.annotate(
+                society_count=Count('society', distinct=True),
+                user_count=Count('user_city', distinct=True),
+                order_count=Count('society__orders', distinct=True),
+            ).order_by('name')
+
+            selected_city = cities.filter(id=selected_city_id).first() if selected_city_id else cities.first()
+
+            societies = Society.objects.none()
+            if selected_city:
+                societies = Society.objects.filter(city=selected_city).annotate(
+                    user_count=Count('users', distinct=True),
+                    order_count=Count('orders', distinct=True),
+                ).order_by('name')
+
+            selected_society = societies.filter(id=selected_society_id).first() if selected_society_id else societies.first()
+
+            dashboard_users = User.objects.none()
+            if selected_society:
+                dashboard_users = User.objects.filter(
+                    society=selected_society,
+                    role='customer'
+                ).annotate(
+                    total_orders_count=Count('orders', distinct=True)
+                ).order_by('username')
+
+            selected_user = dashboard_users.filter(id=selected_user_id).first() if selected_user_id else dashboard_users.first()
+            selected_user_orders = Order.objects.none()
+            if selected_user:
+                selected_user_orders = Order.objects.filter(user=selected_user).order_by('-created_at')[:6]
+
             context = {
                 'today_orders': today_orders,
                 'pending_orders': pending_orders,
@@ -173,6 +225,7 @@ class AdminDashboard(View):
                 'total_products': total_products,
                 'total_users': total_users,
                 'total_delivery_boys': total_delivery_boys,
+                'total_societies': total_societies,
                 'today_sales': today_sales,
                 'monthly_sales': monthly_sales,
                 'average_order_value': average_order_value,
@@ -181,6 +234,20 @@ class AdminDashboard(View):
                 'chart_counts': chart_counts,
                 'top_products': top_products,
                 'current_month': today.strftime("%B %Y"),
+                'total_referrals': total_referrals,
+                'pending_referrals': pending_referrals,
+                'credited_referrals': credited_referrals,
+                'total_referral_rewards': total_referral_rewards,
+                'cities': cities,
+                'societies': societies,
+                'dashboard_users': dashboard_users,
+                'selected_city': selected_city,
+                'selected_society': selected_society,
+                'selected_user': selected_user,
+                'selected_user_orders': selected_user_orders,
+                'referral_min_order': referral_settings['min_order'],
+                'referral_referrer_reward': referral_settings['referrer_reward'],
+                'referral_friend_reward': referral_settings['friend_reward'],
             }
             return render(request, self.get_template, context)
         except:
@@ -317,7 +384,11 @@ class SocietyListView(ListView):
     def get_queryset(self):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return Society.objects.all()
+            queryset = Society.objects.select_related('city').all()
+            city_id = self.request.GET.get('city_id')
+            if city_id:
+                queryset = queryset.filter(city_id=city_id)
+            return queryset.order_by('name')
         except: 
             return redirect('/login/')
         
@@ -438,9 +509,33 @@ class OrderListView(ListView):
     def get(self, request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            orders = Order.objects.all().order_by('-id')[:5]
+            orders = Order.objects.select_related('user', 'society', 'assigned_to').prefetch_related(
+                'order_products__product__unit'
+            ).all()
+            status_filter = request.GET.get('status')
+            user_id = request.GET.get('user_id')
+            society_id = request.GET.get('society_id')
+            city_id = request.GET.get('city_id')
+            date_filter = request.GET.get('date')
+
+            if status_filter:
+                orders = orders.filter(order_status=status_filter)
+            if user_id:
+                orders = orders.filter(user_id=user_id)
+            if society_id:
+                orders = orders.filter(society_id=society_id)
+            if city_id:
+                orders = orders.filter(society__city_id=city_id)
+            if date_filter == 'today':
+                orders = orders.filter(created_at__date=timezone.localdate())
+
+            orders = orders.order_by('-id')
             delivery_boys = User.objects.filter(role='delivery')
-            context = {"orders": orders,"delivery_boys": delivery_boys}
+            context = {
+                "orders": orders,
+                "delivery_boys": delivery_boys,
+                "active_status": status_filter,
+            }
             return render(request, self.template_name, context)
         except:
             return redirect('/login/')
@@ -450,15 +545,22 @@ class OrderUpdateView(View):
         order = get_object_or_404(Order, pk=pk)
         order_status = request.POST.get('order_status')
         assigned_to_id = request.POST.get('assigned_to')
+        previous_status = order.order_status
 
         if order_status:
             order.order_status = order_status
+            if order_status == 'confirmed' and previous_status != 'confirmed':
+                order.assigned_at = timezone.now()
+            elif order_status == 'delivered' and previous_status != 'delivered':
+                order.delivered_at = timezone.now()
         if assigned_to_id:
             order.assigned_to_id = assigned_to_id
         elif order.assigned_to is None:
             admin_user = User.objects.filter(role='admin').first()
             order.assigned_to = admin_user
         order.save()
+        if order.order_status == 'delivered' and previous_status != 'delivered':
+            process_referral_for_delivered_order(order)
 
         messages.success(request, "Order updated successfully ✏️")
         return redirect('order_list')
@@ -470,10 +572,24 @@ class UserListView(ListView):
     template_name = 'adminpanel/user_list.html'
     context_object_name = 'users'
 
-    def get_queryset(self):
+    def get(self, request):
         try:
             User.objects.get(id=self.request.session.get('user_id'))
-            return User.objects.all().order_by('-id')
+            users = User.objects.select_related('society', 'city').all()
+            role = request.GET.get('role')
+            society_id = request.GET.get('society_id')
+            city_id = request.GET.get('city_id')
+
+            if role:
+                users = users.filter(role=role)
+            if society_id:
+                users = users.filter(society_id=society_id)
+            if city_id:
+                users = users.filter(city_id=city_id)
+
+            return render(request, self.template_name, {
+                'users': users.order_by('-id'),
+            })
         except: 
             return redirect('/login/')
 
@@ -489,6 +605,50 @@ class WalletHistoryListView(ListView):
             return WalletHistory.objects.select_related('user', 'performed_by')
         except:
             return redirect('/login/')
+
+class ReferralListView(View):
+    template_name = 'adminpanel/referral_list.html'
+
+    def get(self, request):
+        try:
+            User.objects.get(id=request.session.get('user_id'))
+            referrals = Referral.objects.select_related('referrer', 'referred_user', 'order').order_by('-created_at')
+            status_filter = request.GET.get('status')
+            if status_filter:
+                referrals = referrals.filter(status=status_filter)
+
+            settings_data = get_referral_settings()
+            context = {
+                'referrals': referrals,
+                'total_referrals': referrals.count(),
+                'pending_referrals': referrals.filter(status='pending').count(),
+                'credited_referrals': referrals.filter(status='credited').count(),
+                'invalid_referrals': referrals.filter(status='invalid').count(),
+                'total_cashback_given': referrals.filter(status='credited').aggregate(
+                    total_referrer=Sum('reward_referrer'),
+                    total_friend=Sum('reward_friend'),
+                ),
+                'settings_data': settings_data,
+            }
+            context['total_cashback_given'] = (
+                (context['total_cashback_given']['total_referrer'] or Decimal('0.00')) +
+                (context['total_cashback_given']['total_friend'] or Decimal('0.00'))
+            )
+            return render(request, self.template_name, context)
+        except:
+            return redirect('/login/')
+
+class ReferralSettingsUpdateView(View):
+    def post(self, request):
+        for key in ['referral_min_order', 'referral_referrer_reward', 'referral_friend_reward']:
+            value = request.POST.get(key)
+            if value is None:
+                continue
+            setting_obj, _ = Settings.objects.get_or_create(key=key, defaults={'value': value})
+            setting_obj.value = value
+            setting_obj.save()
+        messages.success(request, "Referral settings updated successfully.")
+        return redirect('referral_list')
 
 #================= City =========================#
 class CityListView(ListView):
@@ -758,8 +918,10 @@ class DeliveryOrdersView(DeliverySessionMixin, View):
 
         orders = Order.objects.filter(
             assigned_to=user
-        ).exclude(order_status='delivered').order_by('-created_at')
-
+        ).exclude(order_status='delivered')\
+        .select_related('user', 'society', 'assigned_to')\
+        .prefetch_related('order_products__product__unit')\
+        .order_by('-created_at')
         return render(request, "delivery/orders.html", {
             "orders": orders
         })
@@ -773,7 +935,10 @@ class DeliveryHistoryView(DeliverySessionMixin, View):
         orders = Order.objects.filter(
             assigned_to=user,
             order_status='delivered'
-        ).order_by('-created_at')
+        ).order_by('-created_at')\
+        .select_related('user', 'society', 'assigned_to')\
+        .prefetch_related('order_products__product__unit')\
+        .order_by('-created_at')
 
         return render(request, "delivery/history.html", {
             "orders": orders
@@ -813,6 +978,7 @@ class DeliverOrderView(DeliverySessionMixin, View):
         order.order_status = "delivered"
         order.delivered_at = timezone.now()
         order.save()
+        process_referral_for_delivered_order(order)
 
         messages.success(request, "Order delivered 🚚")
         return redirect("delivery_orders")

@@ -52,6 +52,8 @@ urlpatterns = [
 
         path('wallet/update/<int:user_id>/', WalletUpdateView.as_view(), name='wallet_update'),
         path('wallet/history/', WalletHistoryListView.as_view(), name='wallet_history'),
+        path('referrals/', ReferralListView.as_view(), name='referral_list'),
+        path('referrals/settings/', ReferralSettingsUpdateView.as_view(), name='referral_settings_update'),
 
         #City
         path('cities/', CityListView.as_view(), name='city_list'),
