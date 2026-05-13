@@ -98,7 +98,15 @@ class CategoryListView(APIView):
 
 class ProductListView2(APIView):
     def get(self, request):
-        products = sorted_products_queryset(Product.objects.all())
+        user_id = request.GET.get("user_id")
+        products = Product.objects.all()
+        try:
+            user = User.objects.get(id=user_id)
+            if user.city:
+                products = products.filter(cities=user.city)
+        except User.DoesNotExist:
+            pass
+        products = sorted_products_queryset(products)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({'products': serializer.data})
 
@@ -203,7 +211,14 @@ class ReferralHistoryView(APIView):
     
 class FlashSaleListView2(APIView):
     def get(self, request):
-        flash_items = FlashSale.objects.filter(is_in_stock=True)
+        user_id = request.GET.get("user_id")
+        flash_items = FlashSale.objects.all()
+        try:
+            user = User.objects.get(id=user_id)
+            if user.city:
+                flash_items = flash_items.filter(product__cities=user.city)
+        except User.DoesNotExist:
+            pass 
         serializer = FlashSaleSerializer(flash_items, many=True, context={'request': request})
         return Response({'flash_sales': serializer.data})
 
