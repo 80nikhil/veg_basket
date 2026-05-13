@@ -168,10 +168,15 @@ class FavoriteProductsView(APIView):
 
         products = sorted_products_queryset(products)[:10]
         serializer = ProductSerializer(products, many=True, context={'request': request})
+        # return Response({
+        #     'title': 'Favorite Vegetable' if favorite_flag == 0 else 'Favorite Fruit',
+        #     'favorite_flag': favorite_flag,
+        #     'products': serializer.data
+        # })
         return Response({
-            'title': 'Favorite Vegetable' if favorite_flag == 0 else 'Favorite Fruit',
+            'title': '',
             'favorite_flag': favorite_flag,
-            'products': serializer.data
+            'products': []
         })
 
 class ReferralInfoView(APIView):
