@@ -23,7 +23,7 @@ SECRET_KEY = 'your-secret-key'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["56.228.33.137", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -77,8 +77,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'veg_basket',
         'USER': 'postgres',
-        'PASSWORD': 'Vegbasket123', 
-        'HOST': 'database-1.cp6c0ui0qx3h.eu-north-1.rds.amazonaws.com',
+        'PASSWORD': 'Vegbasket123',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
